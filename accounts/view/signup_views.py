@@ -1,4 +1,3 @@
-from rest_framework import serializers
 from accounts.models import User, VerificationCode
 from accounts.serializer.signup_serializers import SignupSerializer, VerifySerializer
 from accounts.serializer.signin_serializers import UserSerializer
@@ -19,7 +18,11 @@ class SignupModelViewSet(ModelViewSet):
         try:
             serializer = SignupSerializer(data=request.data)
             if not serializer.is_valid():
-                return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             user = User.objects.get(email=request.data.get('email'))
             verification_code = random_string_generator()
@@ -40,7 +43,11 @@ class VerifyViewSet(ModelViewSet):
         try:
             serializer = VerifySerializer(data=request.data)
             if not serializer.is_valid():
-                return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
             user = User.objects.get(email=request.data.get('email'))
             verification_code = VerificationCode.objects.get(user=user)
             if verification_code.code == request.data.get('code'):

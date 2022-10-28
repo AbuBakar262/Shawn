@@ -3,6 +3,7 @@ from django.urls import path, include
 from accounts.view.signup_views import SignupModelViewSet
 from accounts.view.signin_views import SigninModelViewSet
 from accounts.view.signup_views import VerifyViewSet
+from accounts.view.forgot_password_views import ForgotPasswordViewSet, ForgotChangePasswordViewSet
 
 router = DefaultRouter()
 
@@ -13,4 +14,10 @@ urlpatterns = [
     path("signup/", SignupModelViewSet.as_view({"post": "create"}), name="signup"),
     path("signin/", SigninModelViewSet.as_view({"post": "create"}), name="signin"),
     path("verify/", VerifyViewSet.as_view({"post": "create"}), name="verify"),
+
+    # forgot password and change password urls
+    path("forgot_password/", ForgotPasswordViewSet.as_view({"post": "forgot_password"}), name="forgot_password"),
+    path("forgot_change_password/<uidb64>/<token>/",
+         ForgotChangePasswordViewSet.as_view({"post": "forgot_change_password"}),
+         name="forgot_change_password"),
 ]

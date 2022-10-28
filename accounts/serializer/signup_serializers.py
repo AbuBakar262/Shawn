@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from accounts.models import *
 from django.utils.translation import gettext_lazy as _
-from .signin_serializers import UserSerializer
 
 GENDER_CHOICES = (
     ('male', 'Male'),

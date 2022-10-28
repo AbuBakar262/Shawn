@@ -21,6 +21,8 @@ class ProfileViewSet(ModelViewSet):
                 user_serializer = UserSerializer(user)
                 return Response(
                     data={
+                        "status": "success",
+                        "status_code" : status.HTTP_200_OK,
                         "message": "User data fetched successfully",
                         "responsePayload": user_serializer.data
                     },
@@ -30,6 +32,8 @@ class ProfileViewSet(ModelViewSet):
                 user_serializer = UserSerializer(user)
                 return Response(
                     data={
+                        "status": "success",
+                        "status_code" : status.HTTP_200_OK,
                         "message": "User data fetched successfully",
                         "responsePayload": user_serializer.data
                     },

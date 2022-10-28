@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from accounts.models import User
 from accounts.serializer.signin_serializers import SigninSerializer
@@ -17,7 +17,11 @@ class SigninViewSet(ModelViewSet):
         try:
             serializer = SigninSerializer(data=request.data)
             if not serializer.is_valid():
-                return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "responsePayload": serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
             user = User.objects.get(email=request.data.get('email'))
             if not user.is_verified:
                 return Response(data={

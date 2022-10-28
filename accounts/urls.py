@@ -4,6 +4,7 @@ from accounts.view.signup_views import SignupViewSet
 from accounts.view.signin_views import SigninViewSet
 from accounts.view.signup_views import VerifyViewSet
 from accounts.view.forgot_password_views import ForgotPasswordViewSet, ForgotChangePasswordViewSet
+from accounts.view.user_profile_view import ProfileViewSet
 
 router = DefaultRouter()
 
@@ -20,4 +21,8 @@ urlpatterns = [
     path("forgot_change_password/<uidb64>/<token>/",
          ForgotChangePasswordViewSet.as_view({"post": "forgot_change_password"}),
          name="forgot_change_password"),
+
+    # user profile retrieve with pk
+    path("profile/", ProfileViewSet.as_view({"post": "profile_details"}), name="profile_details"),
+    # path("profile_update/", ProfileViewSet.as_view({"put": "update"}), name="profile_update"),
 ]

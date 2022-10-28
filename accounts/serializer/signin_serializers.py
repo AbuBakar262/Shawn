@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from accounts.models import User
+from django.utils.translation import gettext_lazy as _
 
 
 class SigninSerializer(serializers.ModelSerializer):
@@ -22,17 +23,9 @@ class SigninSerializer(serializers.ModelSerializer):
         if email and password:
             user = authenticate(email=email, password=password)
             if not user:
-                raise serializers.ValidationError({
-                    "status": "error",
-                    "status_code": 400,
-                    "message": "Invalid email or password"
-                })
+                raise serializers.ValidationError({'error': _('Invalid Credentials')})
         else:
-            raise serializers.ValidationError({
-                "status": "error",
-                "status_code": 400,
-                "message": "Please provide email and password"
-            })
+            raise serializers.ValidationError({'error': _('Email and Password are required')})
         attrs['user'] = user
         return attrs
 

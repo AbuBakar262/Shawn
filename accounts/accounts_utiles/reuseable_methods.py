@@ -13,9 +13,9 @@ def random_string_generator():
     return ''.join(random.choice(chars) for x in range(size))
 
 
-def send_otp_via_email(email):
+def send_otp_via_email(email, otp):
     subject = 'OTP for email verification'
-    otp = random_string_generator()
+    # otp = random_string_generator()
     message = f'Your verification code is {otp}'
     email_from = settings.EMAIL_HOST_USER
     recipient_list = [email]

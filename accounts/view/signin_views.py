@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from accounts.models import User
 from accounts.serializer.signin_serializers import SigninSerializer
+from accounts.serializer.signin_serializers import UserSerializer
 
 
 class SigninModelViewSet(ModelViewSet):
@@ -19,17 +20,26 @@ class SigninModelViewSet(ModelViewSet):
                 return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             user = User.objects.get(email=request.data.get('email'))
             if not user.is_verified:
-                return Response(data={"message": "Please verify your email"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data={
+                    "status": "error",
+                    "status_code": 400,
+                    "message": "Please verify your email first to login"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            user_serializer = UserSerializer(user)
             return Response(
                 data={
                     "message": "User logged in successfully",
                     "responsePayload": {
+                        "user": user_serializer.data,
                         "refresh": str(RefreshToken.for_user(user)),
                         "access": str(AccessToken.for_user(user)),
-                        "user": serializer.data
                     }
                 },
                 status=status.HTTP_200_OK
             )
         except Exception as e:
-            return Response(data={"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)

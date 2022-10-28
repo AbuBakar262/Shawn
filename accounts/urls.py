@@ -9,10 +9,8 @@ router = DefaultRouter()
 urlpatterns = [
     path('', include(router.urls)),
 
-    # Signup
+    # authentication urls for signup and signin and verify email
     path("signup/", SignupModelViewSet.as_view({"post": "create"}), name="signup"),
-    # Signin
     path("signin/", SigninModelViewSet.as_view({"post": "create"}), name="signin"),
-    # Verify
     path("verify/", VerifyViewSet.as_view({"post": "create"}), name="verify"),
 ]

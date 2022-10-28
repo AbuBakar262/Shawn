@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny
 from accounts.accounts_utiles.reuseable_methods import send_otp_via_email, random_string_generator
 
 
-class SignupModelViewSet(ModelViewSet):
+class SignupViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
     permission_classes = [AllowAny]

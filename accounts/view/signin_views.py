@@ -8,7 +8,7 @@ from accounts.serializer.signin_serializers import SigninSerializer
 from accounts.serializer.signin_serializers import UserSerializer
 
 
-class SigninModelViewSet(ModelViewSet):
+class SigninViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = SigninSerializer
     permission_classes = [AllowAny]

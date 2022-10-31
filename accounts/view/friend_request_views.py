@@ -30,6 +30,19 @@ class FriendRequestViewSet(ModelViewSet):
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "Friend request already sent"
                 }, status=status.HTTP_400_BAD_REQUEST)
+            existing_friend = Friend.objects.filter(user=user, friend=friend).first()
+            if existing_friend:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "Already friends"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if user == friend:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "You can't send friend request to yourself"
+                }, status=status.HTTP_400_BAD_REQUEST)
             FriendRequest.objects.create(sender=user, receiver=friend)
             return Response(
                 data={

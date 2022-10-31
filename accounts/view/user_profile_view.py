@@ -16,17 +16,14 @@ class ProfileViewSet(ModelViewSet):
 
     def profile_list(self, request, *args, **kwargs):
         try:
-            users = User.objects.filter(is_superuser=False, is_verified=True)
-            user_serializer = UserSerializer(users, many=True)
-            return Response(
-                data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
-                    "message": "User data fetched successfully",
-                    "responsePayload": user_serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
+            user_list = User.objects.exclude(id=request.user.id).exclude(is_superuser=True).exclude(is_verified=False)
+            user_serializer = UserSerializer(user_list, many=True)
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_200_OK,
+                "message": "User data fetched successfully",
+                "responsePayload": user_serializer.data
+            }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={
                 "status": "error",

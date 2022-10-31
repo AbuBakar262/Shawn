@@ -6,6 +6,7 @@ from accounts.view.signup_views import VerifyViewSet
 from accounts.view.forgot_password_views import ForgotPasswordViewSet, ForgotChangePasswordViewSet
 from accounts.view.user_profile_view import ProfileViewSet, ProfileUpdateViewSet
 from accounts.view.friend_request_views import FriendRequestViewSet
+from accounts.view.friendship_views import FriendsViewSet
 
 router = DefaultRouter()
 
@@ -38,4 +39,8 @@ urlpatterns = [
          name="friend_request_action"),
     path("friend_request_delete/", FriendRequestViewSet.as_view({"delete": "friend_request_delete"}),
          name="friend_request_delete"),
+
+    # friend list urls
+    path("friend_list/", FriendsViewSet.as_view({"get": "friend_list"}), name="friend_list"),
+    path("friend_delete/", FriendsViewSet.as_view({"delete": "friend_delete"}), name="friend_delete"),
 ]

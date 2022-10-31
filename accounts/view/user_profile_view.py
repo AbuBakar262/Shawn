@@ -14,6 +14,26 @@ class ProfileViewSet(ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
+    def profile_list(self, request, *args, **kwargs):
+        try:
+            users = User.objects.filter(is_superuser=False, is_verified=True)
+            user_serializer = UserSerializer(users, many=True)
+            return Response(
+                data={
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "User data fetched successfully",
+                    "responsePayload": user_serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
     def profile_details(self, request, *args, **kwargs):
         try:
             user = User.objects.get(id=request.data.get('id'))
@@ -22,7 +42,7 @@ class ProfileViewSet(ModelViewSet):
                 return Response(
                     data={
                         "status": "success",
-                        "status_code" : status.HTTP_200_OK,
+                        "status_code": status.HTTP_200_OK,
                         "message": "User data fetched successfully",
                         "responsePayload": user_serializer.data
                     },
@@ -33,7 +53,7 @@ class ProfileViewSet(ModelViewSet):
                 return Response(
                     data={
                         "status": "success",
-                        "status_code" : status.HTTP_200_OK,
+                        "status_code": status.HTTP_200_OK,
                         "message": "User data fetched successfully",
                         "responsePayload": user_serializer.data
                     },
@@ -43,6 +63,35 @@ class ProfileViewSet(ModelViewSet):
                 "status": "error",
                 "status_code": status.HTTP_400_BAD_REQUEST,
                 "message": "You are not authorized to view this user data"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy_profile(self, request, *args, **kwargs):
+        try:
+            user = User.objects.get(id=request.data.get('id'))
+            if request.user.is_superuser:
+                user.delete()
+                return Response(data={
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "User deleted successfully"
+                }, status=status.HTTP_200_OK)
+            if request.user == user:
+                user.delete()
+                return Response(data={
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "User deleted successfully"
+                }, status=status.HTTP_200_OK)
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": "You are not authorized to delete this user"
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(data={

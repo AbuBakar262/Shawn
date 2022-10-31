@@ -33,4 +33,4 @@ class SigninSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'username', 'email', 'gender', 'contact', 'instagram', 'dob', 'bio']
+        fields = ['id', 'first_name', 'last_name', 'username', 'profile_photo', 'email', 'gender', 'contact', 'instagram', 'dob', 'bio']

@@ -70,3 +70,15 @@ class Friend(LogsMixin):
 
     def __str__(self):
         return f'{self.user} is friend with {self.friend}'
+
+
+class BlockUser(LogsMixin):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='block_user')
+    blocked_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blocked_user')
+    block_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('user', 'blocked_user')
+
+    def __str__(self):
+        return f'{self.user} blocked {self.blocked_user}'

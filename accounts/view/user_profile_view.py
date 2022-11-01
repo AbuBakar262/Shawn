@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from accounts.models import User
+from accounts.models import User, BlockUser
 from accounts.serializer.signin_serializers import SigninSerializer
 from accounts.serializer.signin_serializers import UserSerializer
 from accounts.serializer.user_profile_serializers import UserProfileUpdateSerializer
@@ -17,6 +17,10 @@ class ProfileViewSet(ModelViewSet):
     def profile_list(self, request, *args, **kwargs):
         try:
             user_list = User.objects.exclude(id=request.user.id).exclude(is_superuser=True).exclude(is_verified=False)
+            blocked_user_list = BlockUser.objects.filter(user=request.user)
+            if blocked_user_list:
+                for blocked_user in blocked_user_list:
+                    user_list = user_list.exclude(id=blocked_user.blocked_user.id)
             user_serializer = UserSerializer(user_list, many=True)
             return Response(data={
                 "status": "success",

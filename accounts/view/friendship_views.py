@@ -43,14 +43,8 @@ class FriendsViewSet(ModelViewSet):
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "Friend not found"
                 }, status=status.HTTP_400_BAD_REQUEST)
-            friend = Friend.objects.filter(user=user, friend=friend).first()
-            if not friend:
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "Friend not found"
-                }, status=status.HTTP_400_BAD_REQUEST)
-            friend.delete()
+            Friend.objects.filter(user=user, friend=friend).delete()
+            Friend.objects.filter(user=friend, friend=user).delete()
             return Response(
                 data={
                     "status": "success",

@@ -87,6 +87,7 @@ class BlockUserViewSet(ModelViewSet):
                     "message": "User not blocked"
                 }, status=status.HTTP_400_BAD_REQUEST)
             BlockUser.objects.filter(blocked_user=blocked_user, user=user).delete()
+            BlockUser.objects.filter(blocked_user=user, user=blocked_user).delete()
             return Response(data={
                 "status": "success",
                 "status_code": status.HTTP_200_OK,

@@ -36,6 +36,9 @@ class VerificationCode(LogsMixin):
     code = models.CharField(max_length=6, null=True, blank=True)
     is_expired = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f'{self.user.email} - {self.code}'
+
 
 FRIEND_REQUEST_STATUS = (
     ('pending', 'Pending'),

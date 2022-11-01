@@ -7,6 +7,7 @@ from accounts.view.forgot_password_views import ForgotPasswordViewSet, ForgotCha
 from accounts.view.user_profile_view import ProfileViewSet, ProfileUpdateViewSet
 from accounts.view.friend_request_views import FriendRequestViewSet
 from accounts.view.friendship_views import FriendsViewSet
+from accounts.view.user_block_views import BlockUserViewSet
 
 router = DefaultRouter()
 
@@ -43,4 +44,9 @@ urlpatterns = [
     # friend list urls
     path("friend_list/", FriendsViewSet.as_view({"get": "friend_list"}), name="friend_list"),
     path("friend_delete/", FriendsViewSet.as_view({"delete": "friend_delete"}), name="friend_delete"),
+
+    # block/unblock user urls
+    path("block_user/", BlockUserViewSet.as_view({"post": "block_user"}), name="block_user"),
+    path("blocked_user_list/", BlockUserViewSet.as_view({"get": "blocked_user_list"}), name="blocked_user_list"),
+    path("unblock_user/", BlockUserViewSet.as_view({"delete": "unblock_user"}), name="unblock_user"),
 ]

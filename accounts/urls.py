@@ -8,6 +8,7 @@ from accounts.view.user_profile_view import ProfileViewSet, ProfileUpdateViewSet
 from accounts.view.friend_request_views import FriendRequestViewSet
 from accounts.view.friendship_views import FriendsViewSet
 from accounts.view.user_block_views import BlockUserViewSet
+from accounts.view.location_views import LocationViewSet
 
 router = DefaultRouter()
 
@@ -49,4 +50,8 @@ urlpatterns = [
     path("block_user/", BlockUserViewSet.as_view({"post": "block_user"}), name="block_user"),
     path("blocked_user_list/", BlockUserViewSet.as_view({"get": "blocked_user_list"}), name="blocked_user_list"),
     path("unblock_user/", BlockUserViewSet.as_view({"delete": "unblock_user"}), name="unblock_user"),
+
+    # location urls
+    path("location/", LocationViewSet.as_view({"post": "location"}), name="user_location"),
+    path("location_list/", LocationViewSet.as_view({"get": "location_list"}), name="location_list"),
 ]

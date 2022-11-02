@@ -87,7 +87,6 @@ class BlockUser(LogsMixin):
 class Location(LogsMixin):
     """Location model for storing location information"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='location_user')
-    ip_address = models.CharField(max_length=50, null=True, blank=True)
     latitude = models.CharField(max_length=50, null=True, blank=True)
     longitude = models.CharField(max_length=50, null=True, blank=True)
     city = models.CharField(max_length=50, null=True, blank=True)

@@ -53,4 +53,5 @@ urlpatterns = [
 
     # location urls
     path("location/", LocationViewSet.as_view({"post": "location"}), name="user_location"),
+    path("location_list/", LocationViewSet.as_view({"get": "location_list"}), name="location_list"),
 ]

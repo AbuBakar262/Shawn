@@ -4,9 +4,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from accounts.models import User, Location
-from accounts.serializer.location_serializers import LocationSerializer
+from accounts.serializer.location_serializers import LocationSerializer, UserLocationsSerializer
 from accounts.serializer.signin_serializers import UserSerializer
-from ip2geotools.databases.noncommercial import DbIpCity
 
 
 class LocationViewSet(ModelViewSet):
@@ -17,56 +16,44 @@ class LocationViewSet(ModelViewSet):
     def location(self, request, *args, **kwargs):
         try:
             user = request.user
-            ip = request.META.get('HTTP_X_FORWARDED_FOR')
-            if ip:
-                ip = ip.split(',')[0]
-            else:
-                ip = request.META.get('REMOTE_ADDR')
-            response = DbIpCity.get(ip, api_key='free')
             if Location.objects.filter(user=user).exists():
                 location = Location.objects.get(user=user)
-                location_serializer = LocationSerializer(location, data={
-                    "user": user.id,
-                    "ip": ip,
-                    "latitude": response.latitude,
-                    "longitude": response.longitude,
-                    "city": response.city,
-                    "country": response.country
-                })
-                if location_serializer.is_valid():
-                    location_serializer.save()
-                    return Response(data={
-                        "status": "success",
-                        "status_code": status.HTTP_200_OK,
-                        "message": "Location updated successfully"
-                    }, status=status.HTTP_200_OK)
+                serializer = LocationSerializer(location, data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(
+                        data={
+                            "status": "success",
+                            "status_code": status.HTTP_200_OK,
+                            "message": "Location updated successfully",
+                            "responsePayload": serializer.data
+                        },
+                        status=status.HTTP_200_OK
+                    )
                 else:
                     return Response(data={
                         "status": "error",
                         "status_code": status.HTTP_400_BAD_REQUEST,
-                        "message": location_serializer.errors
+                        "message": serializer.errors
                     }, status=status.HTTP_400_BAD_REQUEST)
             else:
-                location_serializer = LocationSerializer(data={
-                    "user": user.id,
-                    "ip": ip,
-                    "latitude": response.latitude,
-                    "longitude": response.longitude,
-                    "city": response.city,
-                    "country": response.country
-                })
-                if location_serializer.is_valid():
-                    location_serializer.save()
-                    return Response(data={
-                        "status": "success",
-                        "status_code": status.HTTP_200_OK,
-                        "message": "Location created successfully"
-                    }, status=status.HTTP_200_OK)
+                serializer = LocationSerializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save(user=user)
+                    return Response(
+                        data={
+                            "status": "success",
+                            "status_code": status.HTTP_200_OK,
+                            "message": "Location saved successfully",
+                            "responsePayload": serializer.data
+                        },
+                        status=status.HTTP_200_OK
+                    )
                 else:
                     return Response(data={
                         "status": "error",
                         "status_code": status.HTTP_400_BAD_REQUEST,
-                        "message": location_serializer.errors
+                        "message": serializer.errors
                     }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(data={
@@ -74,3 +61,25 @@ class LocationViewSet(ModelViewSet):
                 "status_code": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+
+    # show all user location with their id
+    def location_list(self, request, *args, **kwargs):
+        try:
+            locations = Location.objects.all()
+            serializer = UserLocationsSerializer(locations, many=True)
+            return Response(
+                data={
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "Location list fetched successfully",
+                    "responsePayload": serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+

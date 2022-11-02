@@ -9,6 +9,7 @@ from accounts.view.friend_request_views import FriendRequestViewSet
 from accounts.view.friendship_views import FriendsViewSet
 from accounts.view.user_block_views import BlockUserViewSet
 from accounts.view.location_views import LocationViewSet
+from accounts.view.create_account_views import CreateUserProfileViewSet
 
 router = DefaultRouter()
 
@@ -19,6 +20,9 @@ urlpatterns = [
     path("signup/", SignupViewSet.as_view({"post": "create"}), name="signup"),
     path("signin/", SigninViewSet.as_view({"post": "create"}), name="signin"),
     path("verify/", VerifyViewSet.as_view({"post": "create"}), name="verify"),
+
+    # create user profile
+    path("create_profile/", CreateUserProfileViewSet.as_view({"post": "create_profile"}), name="create_profile"),
 
     # forgot password and change password urls
     path("forgot_password/", ForgotPasswordViewSet.as_view({"post": "forgot_password"}), name="forgot_password"),

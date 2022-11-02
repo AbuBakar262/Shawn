@@ -6,7 +6,6 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from accounts.accounts_utiles.reuseable_methods import send_otp_via_email, random_string_generator
 
 
 class SignupViewSet(ModelViewSet):
@@ -24,14 +23,18 @@ class SignupViewSet(ModelViewSet):
                     "message": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
-            user = User.objects.get(email=request.data.get('email'))
-            verification_code = random_string_generator()
-            VerificationCode.objects.create(user=user, code=verification_code)
-            send_otp_via_email(request.data.get('email'), verification_code)
-            return Response(data={'message': 'User created successfully and verification code sent to email',
-                                  'responsePayload': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_201_CREATED,
+                "message": "User created successfully",
+                "responsePayload": serializer.data['user']
+            }, status=status.HTTP_201_CREATED)
         except Exception as e:
-            return Response(data={'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyViewSet(ModelViewSet):

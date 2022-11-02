@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'username', 'gender', 'profile_photo', 'contact', 'instagram', 'dob',
+        fields = ['id', 'first_name', 'last_name', 'username', 'gender', 'profile_pic', 'phone', 'instagram', 'dob',
                   'bio']
 
     def validate(self, attrs):

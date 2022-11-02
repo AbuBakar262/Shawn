@@ -23,20 +23,21 @@ class SigninViewSet(ModelViewSet):
                     "responsePayload": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
             user = User.objects.get(email=request.data.get('email'))
-            if not user.is_verified:
+            user_serializer = UserSerializer(user)
+            if not user.create_profile:
                 return Response(data={
                     "status": "error",
                     "status_code": 400,
-                    "message": "Please verify your email first to login"
+                    "message": "User logged in successfully",
+                    "responsePayload": user_serializer.data
                 }, status=status.HTTP_400_BAD_REQUEST)
-            user_serializer = UserSerializer(user)
             return Response(
                 data={
                     "message": "User logged in successfully",
                     "responsePayload": {
                         "user": user_serializer.data,
                         "refresh": str(RefreshToken.for_user(user)),
-                        "access": str(AccessToken.for_user(user)),
+                        "access": str(AccessToken.for_user(user))
                     }
                 },
                 status=status.HTTP_200_OK

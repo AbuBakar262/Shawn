@@ -1,11 +1,12 @@
 from accounts.models import User
 from accounts.serializers import (SignupSerializer, UserSerializer,
                                   CreateUserProfileSerializer, SigninSerializer,
-                                  ForgotPasswordSerializer, ChangePasswordSerializer)
+                                  ForgotPasswordSerializer, ChangePasswordSerializer,
+                                  UserProfileUpdateSerializer)
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
@@ -156,6 +157,72 @@ class UserViewSet(viewsets.ModelViewSet):
                         "status_code": status.HTTP_200_OK,
                         "message": "Password changed successfully",
                         "responsePayload": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProfileViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def profile_details(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            if not user:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "User does not exist"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            user_serializer = UserSerializer(user)
+            response = {"status": "success",
+                        "status_code": status.HTTP_200_OK,
+                        "message": "User profile details",
+                        "responsePayload": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+    def profile_update(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            serializer = UserProfileUpdateSerializer(user, data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    data={
+                        "status": "error",
+                        "status_code": status.HTTP_400_BAD_REQUEST,
+                        "message": serializer.errors
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            serializer.save()
+            user_serializer = UserSerializer(user)
+            response = {"status": "success",
+                        "status_code": status.HTTP_200_OK,
+                        "message": "User profile updated successfully",
+                        "responsePayload": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+    def profile_delete(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            user.delete()
+            response = {"status": "success",
+                        "status_code": status.HTTP_200_OK,
+                        "message": "User deleted successfully"}
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"status": "error",

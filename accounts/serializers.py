@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
+        fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
                   'dob', 'bio']
 
 
@@ -132,4 +132,23 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         confirm_password = attrs.get('confirm_password')
         if password != confirm_password:
             raise serializers.ValidationError(_('Password does not match'))
+        return attrs
+
+
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=True)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
+    dob = serializers.DateField(required=True)
+    bio = serializers.CharField(required=True)
+    profile_pic = serializers.ImageField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
+                  'dob', 'bio']
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError({'username': _('Username already exists')})
         return attrs

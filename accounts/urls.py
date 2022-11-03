@@ -1,5 +1,5 @@
 from rest_framework.routers import SimpleRouter
-from .views import UserViewSet, ProfileViewSet
+from .views import UserViewSet, ProfileViewSet, SocialViewSet
 from django.urls import path, include
 
 router = SimpleRouter(trailing_slash=False)
@@ -18,4 +18,9 @@ urlpatterns = [
     # User Profile
     path("api/profile_details", ProfileViewSet.as_view({"get": "profile_details"}), name="profile_details"),
     path("api/profile_edit", ProfileViewSet.as_view({"put": "profile_edit"}), name="profile_edit"),
+
+    # Social Login
+    path("api/social_login", SocialViewSet.as_view({"post": "social_login"}), name="social_login"),
+    path("api/social_profile_create", SocialViewSet.as_view({"post": "social_profile_create"}),
+         name="social_profile_create")
 ]

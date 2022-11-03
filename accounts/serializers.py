@@ -4,6 +4,9 @@ from django.utils.translation import gettext_lazy as _
 import django.contrib.auth.password_validation as validators
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework.response import Response
+from rest_framework import status
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -55,11 +58,54 @@ class SignupSerializer(serializers.ModelSerializer):
         return representation
 
 
+class SocialSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=False)
+    email = serializers.EmailField(required=True)
+    instagram = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
+                  'dob', 'bio', 'create_profile']
+
+    # def validate(self, data):
+    #     if User.objects.filter(email=data['email']).exists():
+    #         raise serializers.ValidationError({'email': _('Email already exists')})
+    #     # if User.objects.filter(username=data['username']).exists():
+    #     #     raise serializers.ValidationError({'username': _('Username already exists')})
+    #     if User.objects.filter(instagram=data['instagram']).exists():
+    #         raise serializers.ValidationError({'instagram': _('Instagram already exists')})
+    #     return data
+
+    def create(self, validated_data):
+        if not User.objects.filter(email=validated_data['email'], instagram=validated_data['instagram']).exists():
+            user = User.objects.create(
+                username=validated_data['username'],
+                email=validated_data['email'],
+                instagram=validated_data['instagram'],
+            )
+            return user
+        else:
+            user = User.objects.get(email=validated_data['email'], instagram=validated_data['instagram'])
+            return user
+
 class CreateUserProfileSerializer(serializers.ModelSerializer):
     profile_pic = serializers.FileField(required=True)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     phone = serializers.CharField(required=True)
     instagram = serializers.CharField(required=True)
+    dob = serializers.DateField(required=True)
+    bio = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'profile_pic', 'gender', 'phone', 'instagram', 'dob', 'bio']
+
+
+class SocialCreateUserProfileSerializer(serializers.ModelSerializer):
+    profile_pic = serializers.FileField(required=True)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
+    phone = serializers.CharField(required=True)
     dob = serializers.DateField(required=True)
     bio = serializers.CharField(required=True)
 

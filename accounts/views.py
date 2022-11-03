@@ -2,7 +2,8 @@ from accounts.models import User
 from accounts.serializers import (SignupSerializer, UserSerializer,
                                   CreateUserProfileSerializer, SigninSerializer,
                                   ForgotPasswordSerializer, ChangePasswordSerializer,
-                                  UserProfileUpdateSerializer)
+                                  UserProfileUpdateSerializer, SocialSerializer,
+                                  SocialCreateUserProfileSerializer)
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
@@ -156,7 +157,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
-        operation_description= "Reset Password",
+        operation_description="Reset Password",
         request_body=ChangePasswordSerializer,
         responses={
             200: openapi.Response('Password changed successfully', UserSerializer),
@@ -230,7 +231,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(
         operation_description="Profile Edit",
-        request_body= UserProfileUpdateSerializer,
+        request_body=UserProfileUpdateSerializer,
         responses={
             200: openapi.Response('Profile updated successfully', UserSerializer),
             400: openapi.Response('Bad request', UserSerializer),
@@ -256,6 +257,81 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         "message": "User profile updated successfully",
                         "responsePayload": user_serializer.data}
             return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SocialViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        operation_description="Social Signup",
+        request_body=SocialSerializer
+    )
+    def social_login(self, request, *args, **kwargs):
+        try:
+            serializer = SocialSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            data = serializer.data
+            if data.get("create_profile") == True:
+                result = {
+                    "user": serializer.data,
+                    # create access token from serializer data
+                    "access": str(RefreshToken.for_user(serializer.instance).access_token),
+                    "refresh": str(RefreshToken.for_user(serializer.instance).access_token),
+                }
+                return Response(data={
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "User signup successfully",
+                    "responsePayload": result
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response(data={
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "User signup successfully",
+                    "responsePayload": serializer.data
+                }, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_description="Social Profile Create",
+        request_body=SocialCreateUserProfileSerializer
+    )
+    def social_profile_create(self, request, *args, **kwargs):
+        try:
+            email = request.data.get('email')
+            user = User.objects.get(email=email)
+            serializer = SocialCreateUserProfileSerializer(user, data=request.data)
+            if serializer.is_valid():
+                serializer.save(create_profile=True)
+                return Response(data={
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "User profile created successfully",
+                    "responsePayload": serializer.data
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             error = {"status": "error",
                      "status_code": status.HTTP_400_BAD_REQUEST,

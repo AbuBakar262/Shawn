@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
+        fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
                   'dob', 'bio']
 
 
@@ -56,7 +56,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class CreateUserProfileSerializer(serializers.ModelSerializer):
-    profile_pic = serializers.ImageField(required=True)
+    profile_pic = serializers.FileField(required=True)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     phone = serializers.CharField(required=True)
     instagram = serializers.CharField(required=True)
@@ -90,4 +90,64 @@ class SigninSerializer(serializers.ModelSerializer):
             if not user:
                 raise serializers.ValidationError({'error': _('Invalid credentials')})
         attrs['user'] = user
+        return attrs
+
+
+class ForgotPasswordSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['email']
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        if not User.objects.filter(email=email).exists():
+            raise serializers.ValidationError(_('Email does not exist'))
+        return attrs
+
+
+class ChangePasswordSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        required=True,
+        trim_whitespace=True,
+        label=_('Password'),
+        style={'input_type': 'password'},
+        max_length=128
+    )
+    confirm_password = serializers.CharField(
+        required=True,
+        trim_whitespace=True,
+        label=_('Password'),
+        style={'input_type': 'password'},
+        max_length=128
+    )
+
+    class Meta:
+        model = User
+        fields = ['password', 'confirm_password']
+
+    def validate(self, attrs):
+        password = attrs.get('password')
+        confirm_password = attrs.get('confirm_password')
+        if password != confirm_password:
+            raise serializers.ValidationError(_('Password does not match'))
+        return attrs
+
+
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=True)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
+    dob = serializers.DateField(required=True)
+    bio = serializers.CharField(required=True)
+    profile_pic = serializers.FileField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'gender', 'dob', 'bio', 'profile_pic']
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError({'username': _('Username already exists')})
         return attrs

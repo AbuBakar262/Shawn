@@ -12,12 +12,18 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from accounts.utils import send_otp_via_email
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = [AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="Signup",
+        request_body=SignupSerializer
+    )
     def signup(self, request, *args, **kwargs):
         try:
             serializer = SignupSerializer(data=request.data)
@@ -41,6 +47,14 @@ class UserViewSet(viewsets.ModelViewSet):
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description="Create user profile",
+        request_body=CreateUserProfileSerializer,
+        responses={
+            201: openapi.Response('User profile created successfully', UserSerializer),
+            400: openapi.Response('Bad request', UserSerializer),
+        }
+    )
     def create_profile(self, request, *args, **kwargs):
         try:
             email = request.data.get('email')
@@ -67,6 +81,14 @@ class UserViewSet(viewsets.ModelViewSet):
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description="Signin",
+        request_body=SigninSerializer,
+        responses={
+            200: openapi.Response('User logged in successfully', UserSerializer),
+            400: openapi.Response('Bad request', UserSerializer),
+        }
+    )
     def login(self, request, *args, **kwargs):
         try:
             serializer = SigninSerializer(data=request.data)
@@ -105,6 +127,14 @@ class UserViewSet(viewsets.ModelViewSet):
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description="Forgot password",
+        request_body=ForgotPasswordSerializer,
+        responses={
+            200: openapi.Response('OTP sent to email successfully', UserSerializer),
+            400: openapi.Response('Bad request', UserSerializer),
+        }
+    )
     def forgot_password(self, request, *args, **kwargs):
         try:
             serializer = ForgotPasswordSerializer(data=request.data)
@@ -125,7 +155,15 @@ class UserViewSet(viewsets.ModelViewSet):
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
-    def forgot_change_password(self, request, *args, **kwargs):
+    @swagger_auto_schema(
+        operation_description= "Reset Password",
+        request_body=ChangePasswordSerializer,
+        responses={
+            200: openapi.Response('Password changed successfully', UserSerializer),
+            400: openapi.Response('Bad request', UserSerializer),
+        }
+    )
+    def reset_password(self, request, *args, **kwargs):
         try:
             uid = urlsafe_base64_decode(kwargs['uidb64']).decode()
             if not User.objects.filter(pk=uid).exists():
@@ -190,7 +228,15 @@ class ProfileViewSet(viewsets.ModelViewSet):
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
-    def profile_update(self, request, *args, **kwargs):
+    @swagger_auto_schema(
+        operation_description="Profile Edit",
+        request_body= UserProfileUpdateSerializer,
+        responses={
+            200: openapi.Response('Profile updated successfully', UserSerializer),
+            400: openapi.Response('Bad request', UserSerializer),
+        }
+    )
+    def profile_edit(self, request, *args, **kwargs):
         try:
             user = request.user
             serializer = UserProfileUpdateSerializer(user, data=request.data)
@@ -209,20 +255,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         "status_code": status.HTTP_200_OK,
                         "message": "User profile updated successfully",
                         "responsePayload": user_serializer.data}
-            return Response(data=response, status=status.HTTP_200_OK)
-        except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
-
-    def profile_delete(self, request, *args, **kwargs):
-        try:
-            user = request.user
-            user.delete()
-            response = {"status": "success",
-                        "status_code": status.HTTP_200_OK,
-                        "message": "User deleted successfully"}
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"status": "error",

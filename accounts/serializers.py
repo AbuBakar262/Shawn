@@ -56,7 +56,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class CreateUserProfileSerializer(serializers.ModelSerializer):
-    profile_pic = serializers.ImageField(required=True)
+    profile_pic = serializers.FileField(required=True)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     phone = serializers.CharField(required=True)
     instagram = serializers.CharField(required=True)
@@ -140,12 +140,11 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     dob = serializers.DateField(required=True)
     bio = serializers.CharField(required=True)
-    profile_pic = serializers.ImageField(required=True)
+    profile_pic = serializers.FileField(required=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
-                  'dob', 'bio']
+        fields = ['username', 'gender', 'dob', 'bio', 'profile_pic']
 
     def validate(self, attrs):
         username = attrs.get('username')

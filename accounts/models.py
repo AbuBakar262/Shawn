@@ -7,6 +7,10 @@ GENDER_CHOICES = (
     ('Female', 'Female')
 )
 
+ACCOUNT_CHOICE = (
+    ('Public', 'Public'),
+    ('Private', 'Private')
+)
 
 class User(AbstractUser):
     username = models.CharField(max_length=50, null=True, blank=True, unique=True)
@@ -21,9 +25,16 @@ class User(AbstractUser):
     email_verified = models.BooleanField(default=False)
     phone_verified = models.BooleanField(default=False)
     create_profile = models.BooleanField(default=False)
+    is_account = models.CharField(max_length=10, choices=ACCOUNT_CHOICE, default='Public')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
     def __str__(self):
         return self.email
+
+
+class FireBaseNotification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='firebase_notification', null=True,
+                             blank=True)
+    registration_id = models.TextField(null=True, blank=True)

@@ -21,14 +21,15 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             friend_list = Friend.objects.filter(user=user)
             friend_list = [friend.friend.id for friend in friend_list]
             reject_list = RejectRequest.objects.filter(user=user)
-            reject_list = [reject.reject_user.id for reject in reject_list]
+            reject_list = [reject.rejected_user.id for reject in reject_list]
             contact_list = User.objects.exclude(id__in=friend_list).exclude(id__in=reject_list).exclude(
                 id=user.id).exclude(is_superuser=True)
             serializer = ContactListSerializer(contact_list, many=True)
             return Response({
                 "status": True,
+                "status_code": status.HTTP_200_OK,
                 "message": "Contact List",
-                "data": serializer.data
+                "result": serializer.data
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({
@@ -39,7 +40,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
     def send_friend_request(self, request, *args, **kwargs):
         try:
             user = request.user
-            friend = User.objects.get(id=request.data.get("friend_id"))
+            friend = User.objects.get(id=request.data.get("friend_request"))
             if not friend:
                 return Response(data={
                     "status": "error",
@@ -79,7 +80,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request sent successfully",
-                    "responsePayload": request.data
+                    "result": request.data
                 },
                 status=status.HTTP_200_OK
             )
@@ -117,9 +118,9 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 return Response(data={
                     "status": "error",
                     "status_code": status.HTTP_400_BAD_REQUEST,
-                    "responsePayload": serializer.errors
+                    "result": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
-            friend_request_id = serializer.validated_data['friend_request_id']
+            friend_request_id = serializer.validated_data['friend_request']
             friend_request = FriendRequest.objects.filter(id=friend_request_id.id).first()
             if not friend_request:
                 return Response(data={
@@ -142,7 +143,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "message": "Friend request accepted"
                 }, status=status.HTTP_200_OK)
             elif serializer.validated_data['status'] == 'rejected':
-                RejectRequest.objects.create(user=friend_request.sender, reject_user=friend_request.receiver)
+                RejectRequest.objects.create(user=friend_request.sender, rejected_user=friend_request.receiver)
                 friend_request.delete()
                 return Response(data={
                     "status": "success",

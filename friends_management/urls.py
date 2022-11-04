@@ -12,4 +12,6 @@ urlpatterns = [
          name="send_friend_request"),
     path("api/friend_request_list", FriendManagementViewSet.as_view({"get": "friend_request_list"}),
          name="friend_request_list"),
+    path("api/friend_request_action", FriendManagementViewSet.as_view({"post": "friend_request_action"}),
+            name="friend_request_action"),
 ]

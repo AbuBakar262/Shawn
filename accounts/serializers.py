@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
-                  'dob', 'bio']
+                  'dob', 'bio', 'create_profile', 'is_account']
 
 
 GENDER_CHOICES = (

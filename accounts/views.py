@@ -278,6 +278,30 @@ class ProfileViewSet(viewsets.ModelViewSet):
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
+
+    def profile_status(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            if not user:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "User does not exist"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            user.is_account = request.data.get('is_account')
+            user.save()
+            user_serializer = UserSerializer(user)
+            response = {"status": "success",
+                        "status_code": status.HTTP_200_OK,
+                        "message": "User profile status changed successfully",
+                        "responsePayload": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
     def profile_delete(self, request, *args, **kwargs):
         try:
             user = request.user
@@ -293,7 +317,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
     def get_permissions(self):
-        if self.action in ['profile_edit', 'profile_delete']:
+        if self.action in ['profile_edit', 'profile_delete', 'profile_status']:
             permission_classes = [IsAuthenticated]
         if self.action in ['profile_details', 'profile_list']:
             permission_classes = [AllowAny]

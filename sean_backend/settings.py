@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'accounts',
+    'friends_management',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

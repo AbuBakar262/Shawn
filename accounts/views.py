@@ -286,9 +286,8 @@ class SocialViewSet(viewsets.ModelViewSet):
             if data.get("create_profile") == True:
                 result = {
                     "user": serializer.data,
-                    # create access token from serializer data
-                    "access": str(RefreshToken.for_user(serializer.instance).access_token),
-                    "refresh": str(RefreshToken.for_user(serializer.instance).access_token),
+                    "access": str(AccessToken.for_user(serializer.instance)),
+                    "refresh": str(RefreshToken.for_user(serializer.instance)),
                 }
                 return Response(data={
                     "status": "success",

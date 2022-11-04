@@ -39,7 +39,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 "status": "success",
                 "status_code": status.HTTP_201_CREATED,
                 "message": "User created successfully",
-                "responsePayload": serializer.data['user']
+                "result": serializer.data['user']
             }, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(data={
@@ -67,7 +67,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     "status": "success",
                     "status_code": status.HTTP_201_CREATED,
                     "message": "User profile created successfully",
-                    "responsePayload": user_serializer.data
+                    "result": user_serializer.data
                 }, status=status.HTTP_201_CREATED)
             else:
                 return Response(data={
@@ -106,14 +106,14 @@ class UserViewSet(viewsets.ModelViewSet):
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
                     "message": "User logged in successfully",
-                    "responsePayload": user_serializer.data
+                    "result": user_serializer.data
                 }, status=status.HTTP_200_OK)
             return Response(
                 data={
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
                     "message": "User logged in successfully",
-                    "responsePayload": {
+                    "result": {
                         "user": user_serializer.data,
                         "refresh": str(RefreshToken.for_user(user)),
                         "access": str(AccessToken.for_user(user))

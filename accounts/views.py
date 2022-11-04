@@ -206,11 +206,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def profile_details(self, request, *args, **kwargs):
         try:
-            user = request.user
+            user = User.objects.get(id=request.data.get('id'))
             if not user:
                 return Response(data={
                     "status": "error",
@@ -262,6 +262,42 @@ class ProfileViewSet(viewsets.ModelViewSet):
                      "status_code": status.HTTP_400_BAD_REQUEST,
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+    def profile_list(self, request, *args, **kwargs):
+        try:
+            user = User.objects.exclude(is_superuser=True)
+            user_serializer = UserSerializer(user, many=True)
+            response = {"status": "success",
+                        "status_code": status.HTTP_200_OK,
+                        "message": "User profile list",
+                        "responsePayload": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+    def profile_delete(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            user.delete()
+            response = {"status": "success",
+                        "status_code": status.HTTP_200_OK,
+                        "message": "User profile deleted successfully"}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_permissions(self):
+        if self.action in ['profile_edit', 'profile_delete']:
+            permission_classes = [IsAuthenticated]
+        if self.action in ['profile_details', 'profile_list']:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
 
 
 class SocialViewSet(viewsets.ModelViewSet):

@@ -29,4 +29,6 @@ urlpatterns = [
 
     # Block User
     path("api/block_user", BlockUserViewSet.as_view({"post": "block_user"}), name="block_user"),
+    path("api/blocked_user_list", BlockUserViewSet.as_view({"get": "blocked_user_list"}), name="blocked_user_list"),
+    path("api/unblock_user", BlockUserViewSet.as_view({"delete": "unblock_user"}), name="unblock_user"),
 ]

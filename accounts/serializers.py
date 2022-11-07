@@ -71,8 +71,8 @@ class SocialSerializer(serializers.ModelSerializer):
     # def validate(self, data):
     #     if User.objects.filter(email=data['email']).exists():
     #         raise serializers.ValidationError({'email': _('Email already exists')})
-    #     # if User.objects.filter(username=data['username']).exists():
-    #     #     raise serializers.ValidationError({'username': _('Username already exists')})
+    #     if User.objects.filter(username=data['username']).exists():
+    #         raise serializers.ValidationError({'username': _('Username already exists')})
     #     if User.objects.filter(instagram=data['instagram']).exists():
     #         raise serializers.ValidationError({'instagram': _('Instagram already exists')})
     #     return data
@@ -88,6 +88,7 @@ class SocialSerializer(serializers.ModelSerializer):
         else:
             user = User.objects.get(email=validated_data['email'], instagram=validated_data['instagram'])
             return user
+
 
 class CreateUserProfileSerializer(serializers.ModelSerializer):
     profile_pic = serializers.FileField(required=True)

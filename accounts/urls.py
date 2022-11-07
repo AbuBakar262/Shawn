@@ -1,5 +1,5 @@
 from rest_framework.routers import SimpleRouter
-from .views import UserViewSet, ProfileViewSet, SocialViewSet
+from .views import UserViewSet, ProfileViewSet, SocialViewSet, BlockUserViewSet
 from django.urls import path, include
 
 router = SimpleRouter(trailing_slash=False)
@@ -25,5 +25,8 @@ urlpatterns = [
     # Social Login
     path("api/social_login", SocialViewSet.as_view({"post": "social_login"}), name="social_login"),
     path("api/social_profile_create", SocialViewSet.as_view({"post": "social_profile_create"}),
-         name="social_profile_create")
+         name="social_profile_create"),
+
+    # Block User
+    path("api/block_user", BlockUserViewSet.as_view({"post": "block_user"}), name="block_user"),
 ]

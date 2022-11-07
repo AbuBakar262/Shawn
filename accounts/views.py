@@ -1,9 +1,10 @@
-from accounts.models import User
+from accounts.models import User, BlockUser, FireBaseNotification
+from friends_management.models import Friend
 from accounts.serializers import (SignupSerializer, UserSerializer,
                                   CreateUserProfileSerializer, SigninSerializer,
                                   ForgotPasswordSerializer, ChangePasswordSerializer,
                                   UserProfileUpdateSerializer, SocialSerializer,
-                                  SocialCreateUserProfileSerializer)
+                                  SocialCreateUserProfileSerializer, BlockUserSerializer)
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
@@ -206,6 +207,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
+
     # permission_classes = [IsAuthenticated]
 
     def profile_details(self, request, *args, **kwargs):
@@ -277,7 +279,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                      "status_code": status.HTTP_400_BAD_REQUEST,
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
-
 
     def profile_status(self, request, *args, **kwargs):
         try:
@@ -391,6 +392,52 @@ class SocialViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BlockUserViewSet(viewsets.ModelViewSet):
+    queryset = BlockUser.objects.all()
+    serializer_class = BlockUserSerializer
+    permission_classes = [IsAuthenticated]
+
+    # if user is your friend then remove from friend list and block user
+    def block_user(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            blocked_user = User.objects.get(id=request.data.get('blocked_user'))
+            if not blocked_user:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "User does not exist"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if user == blocked_user:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "You can not block yourself"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if user in BlockUser.objects.filter(block_user=blocked_user):
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "User already blocked"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if Friend.objects.filter(user=request.user, friend=blocked_user).exists():
+                user_friend = Friend.objects.filter(user=request.user, friend=blocked_user).first()
+                user_friend.delete()
+            block_user = BlockUser.objects.create(block_user=blocked_user, user=user)
+            serializer = BlockUserSerializer(block_user)
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_200_OK,
+                "message": "User blocked successfully",
+                "result": serializer.data
+            }, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"status": "error",
                      "status_code": status.HTTP_400_BAD_REQUEST,

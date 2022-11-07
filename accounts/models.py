@@ -12,6 +12,7 @@ ACCOUNT_CHOICE = (
     ('Private', 'Private')
 )
 
+
 class User(AbstractUser):
     username = models.CharField(max_length=50, null=True, blank=True, unique=True)
     profile_pic = models.FileField(upload_to='media/profile_photos', null=True, blank=True)
@@ -38,3 +39,16 @@ class FireBaseNotification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='firebase_notification', null=True,
                              blank=True)
     registration_id = models.TextField(null=True, blank=True)
+
+
+class BlockUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='block_user', null=True, blank=True)
+    block_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='block_user_by', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'block_user')
+
+    def __str__(self):
+        return f'{self.user.email} blocked {self.block_user.email}'

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.models import User, FireBaseNotification
+from accounts.models import User, FireBaseNotification, BlockUser
 from django.utils.translation import gettext_lazy as _
 import django.contrib.auth.password_validation as validators
 from django.contrib.auth.hashers import make_password
@@ -205,3 +205,14 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         if User.objects.filter(username=username).exists():
             raise serializers.ValidationError({'username': _('Username already exists')})
         return attrs
+
+
+class BlockUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlockUser
+        fields = ['block_user']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['block_user'] = UserSerializer(instance.block_user).data
+        return data

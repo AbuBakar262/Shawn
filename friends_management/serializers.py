@@ -10,7 +10,6 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.response import Response
 from rest_framework import status
 
-
 FRIEND_REQUEST_STATUS = (
     ('accepted', 'Accepted'),
     ('rejected', 'Rejected')
@@ -28,8 +27,6 @@ class FriendRequestListSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendRequest
         fields = ['id', 'sender', 'receiver', 'status', 'created_at', 'updated_at']
-
-        # get send profile data
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -55,4 +52,3 @@ class FriendRequestActionSerializer(serializers.ModelSerializer):
         if not friend_request_id.status == 'pending':
             raise serializers.ValidationError(_("Friend request is already {}").format(friend_request_id.status))
         return attrs
-

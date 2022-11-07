@@ -40,16 +40,16 @@ class FriendRequestListSerializer(serializers.ModelSerializer):
 
 
 class FriendRequestActionSerializer(serializers.ModelSerializer):
-    friend_request_id = serializers.SlugRelatedField(queryset=FriendRequest.objects.all(), slug_field='id', required=True)
+    friend_request = serializers.SlugRelatedField(queryset=FriendRequest.objects.all(), slug_field='id', required=True)
     status = serializers.ChoiceField(choices=FRIEND_REQUEST_STATUS, required=True)
 
     class Meta:
         model = FriendRequest
-        fields = ['friend_request_id', 'status']
+        fields = ['friend_request', 'status']
 
     def validate(self, attrs):
         status = attrs.get('status')
-        friend_request_id = attrs.get('friend_request_id')
+        friend_request_id = attrs.get('friend_request')
         if not status in ['accepted', 'rejected']:
             raise serializers.ValidationError(_("Status must be accepted or rejected"))
         if not friend_request_id.status == 'pending':

@@ -106,7 +106,7 @@ class UserLocationViewSet(viewsets.ModelViewSet):
                 return Response({
                     'status': False,
                     'status_code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'You are not allowed to delete this event'
+                    'message': 'You are not allowed to delete this location'
                 }, status=status.HTTP_400_BAD_REQUEST)
             location.delete()
             return Response({

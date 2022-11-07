@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.models import User
+from accounts.models import User, FireBaseNotification
 from django.utils.translation import gettext_lazy as _
 import django.contrib.auth.password_validation as validators
 from django.contrib.auth.hashers import make_password
@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import transaction
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -27,10 +28,11 @@ class SignupSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(max_length=128, label='Password', style={'input_type': 'password'},
                                      write_only=True)
+    registration_id = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ['username', 'email', 'password', 'registration_id']
 
     @staticmethod
     def validate_password(data):
@@ -45,11 +47,14 @@ class SignupSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=make_password(validated_data['password']),
-        )
+        username = validated_data['username']
+        email = validated_data['email']
+        password = validated_data['password']
+        with transaction.atomic():
+            user = User.objects.create(username=username, email=email, password=make_password(password))
+            user.save()
+            if validated_data.get('registration_id'):
+                FireBaseNotification.objects.create(user=user, registration_id=validated_data['registration_id'])
         return user
 
     def to_representation(self, instance):

@@ -74,13 +74,14 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request accepted"
                 }, status=status.HTTP_200_OK)
-            FriendRequest.objects.create(sender=user, receiver=friend)
+            friend_request = FriendRequest.objects.create(sender=user, receiver=friend)
             return Response(
                 data={
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request sent successfully",
-                    "result": request.data
+                    # return FriendRequest object
+                    "result": FriendRequestListSerializer(friend_request).data
                 },
                 status=status.HTTP_200_OK
             )
@@ -155,6 +156,36 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status": "error",
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "Invalid status"
+                }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def friend_request_delete(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            friend_request = FriendRequest.objects.filter(id=request.data['friend_request_id']).first()
+            if not friend_request:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "Friend request not found"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if friend_request.sender == user:
+                friend_request.delete()
+                return Response(data={
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "Friend request deleted successfully"
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "You are not authorized to perform this action"
                 }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(data={

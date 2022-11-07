@@ -115,8 +115,8 @@ class UserViewSet(viewsets.ModelViewSet):
                     "message": "User logged in successfully",
                     "result": {
                         "user": user_serializer.data,
-                        "refresh": str(RefreshToken.for_user(user)),
-                        "access": str(AccessToken.for_user(user))
+                        "access": str(AccessToken.for_user(user)),
+                        "refresh": str(RefreshToken.for_user(user))
                     }
                 },
                 status=status.HTTP_200_OK

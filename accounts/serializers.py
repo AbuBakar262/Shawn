@@ -44,6 +44,8 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'email': _('Email already exists')})
         if User.objects.filter(username=data['username']).exists():
             raise serializers.ValidationError({'username': _('Username already exists')})
+        if len(data['username']) > 15:
+            raise serializers.ValidationError({'username': _('Username must be less than 15 characters')})
         return data
 
     def create(self, validated_data):

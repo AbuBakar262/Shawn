@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'accounts',
     'friends_management',
+    'event',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

@@ -16,6 +16,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from accounts.utils import send_otp_via_email
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from sean_backend.settings import FRONTEND_FORGET_PASSWORD_URL
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -143,7 +144,7 @@ class UserViewSet(viewsets.ModelViewSet):
             if not serializer.is_valid():
                 return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             user = User.objects.get(email=request.data.get('email'))
-            link = "http://localhost:3000/accounts/api/forgot_change_password/" + urlsafe_base64_encode(
+            link = FRONTEND_FORGET_PASSWORD_URL + urlsafe_base64_encode(
                 force_bytes(user.pk)) + "/" + PasswordResetTokenGenerator().make_token(user) + "/"
             send_otp_via_email(request.data.get('email'), link)
             response = {"status": "success",

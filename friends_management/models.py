@@ -12,17 +12,17 @@ FRIEND_REQUEST_STATUS = (
 
 
 class FriendRequest(models.Model):
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sender', null=True, blank=True)
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receiver', null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sender_in_friend_request', null=True, blank=True)
+    receiver_friend_request = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receiver_in_friend_request', null=True, blank=True)
     status = models.CharField(max_length=10, choices=FRIEND_REQUEST_STATUS, default='pending', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('sender', 'receiver')
+        unique_together = ('user', 'receiver_friend_request')
 
     def __str__(self):
-        return f'{self.sender} sent friend request to {self.receiver}'
+        return f'{self.user} sent friend request to {self.receiver_friend_request}'
 
 
 class Friend(models.Model):

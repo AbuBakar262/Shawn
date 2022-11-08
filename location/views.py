@@ -1,6 +1,6 @@
 from accounts.models import User
-from event.models import UserLocation
-from event.serializers import (UserLocationSerializer, UserLocationListSerializer)
+from location.models import UserLocation
+from location.serializers import (UserLocationSerializer, UserLocationListSerializer)
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
@@ -77,7 +77,7 @@ class UserLocationViewSet(viewsets.ModelViewSet):
                 return Response({
                     'status': False,
                     'status_code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'No event found'
+                    'message': 'No location found'
                 }, status=status.HTTP_400_BAD_REQUEST)
             return Response({
                 'status': True,

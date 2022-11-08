@@ -8,6 +8,9 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
+from datetime import date
+from dateutil.relativedelta import relativedelta
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -108,6 +111,14 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'profile_pic', 'gender', 'phone', 'instagram', 'dob', 'bio']
+
+    def validate(self, attrs):
+        if attrs.get("dob"):
+            age = relativedelta(date.today(), attrs.get("dob")).years
+            if age < 16:
+                raise serializers.ValidationError(
+                    {'dob': _("You must be 16 or older to use Sean APP")})
+        return attrs
 
 
 class SocialCreateUserProfileSerializer(serializers.ModelSerializer):

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'accounts',
     'friends_management',
     'location',
+    'event',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

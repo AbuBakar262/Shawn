@@ -1,9 +1,10 @@
-from accounts.models import User
+from accounts.models import User, BlockUser, FireBaseNotification
+from friends_management.models import Friend
 from accounts.serializers import (SignupSerializer, UserSerializer,
                                   CreateUserProfileSerializer, SigninSerializer,
                                   ForgotPasswordSerializer, ChangePasswordSerializer,
                                   UserProfileUpdateSerializer, SocialSerializer,
-                                  SocialCreateUserProfileSerializer)
+                                  SocialCreateUserProfileSerializer, BlockUserSerializer)
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
@@ -115,8 +116,8 @@ class UserViewSet(viewsets.ModelViewSet):
                     "message": "User logged in successfully",
                     "result": {
                         "user": user_serializer.data,
-                        "refresh": str(RefreshToken.for_user(user)),
-                        "access": str(AccessToken.for_user(user))
+                        "access": str(AccessToken.for_user(user)),
+                        "refresh": str(RefreshToken.for_user(user))
                     }
                 },
                 status=status.HTTP_200_OK
@@ -206,6 +207,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
+
     # permission_classes = [IsAuthenticated]
 
     def profile_details(self, request, *args, **kwargs):
@@ -278,6 +280,29 @@ class ProfileViewSet(viewsets.ModelViewSet):
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
+    def profile_status(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            if not user:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "User does not exist"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            user.is_account = request.data.get('is_account')
+            user.save()
+            user_serializer = UserSerializer(user)
+            response = {"status": "success",
+                        "status_code": status.HTTP_200_OK,
+                        "message": "User profile status changed successfully",
+                        "responsePayload": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
     def profile_delete(self, request, *args, **kwargs):
         try:
             user = request.user
@@ -293,7 +318,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
     def get_permissions(self):
-        if self.action in ['profile_edit', 'profile_delete']:
+        if self.action in ['profile_edit', 'profile_delete', 'profile_status']:
             permission_classes = [IsAuthenticated]
         if self.action in ['profile_details', 'profile_list']:
             permission_classes = [AllowAny]
@@ -367,6 +392,104 @@ class SocialViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BlockUserViewSet(viewsets.ModelViewSet):
+    queryset = BlockUser.objects.all()
+    serializer_class = BlockUserSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def block_user(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            blocked_user = User.objects.get(id=request.data.get('blocked_user'))
+            if not blocked_user:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "User does not exist"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if user == blocked_user:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "You can not block yourself"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if user in BlockUser.objects.filter(block_user=blocked_user):
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "User already blocked"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if Friend.objects.filter(user=request.user, friend=blocked_user).exists():
+                user_friend = Friend.objects.filter(user=request.user, friend=blocked_user).first()
+                user_friend.delete()
+            block_user = BlockUser.objects.create(block_user=blocked_user, user=user)
+            serializer = BlockUserSerializer(block_user)
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_200_OK,
+                "message": "User blocked successfully",
+                "result": serializer.data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+    def blocked_user_list(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            blocked_user = BlockUser.objects.filter(user=user)
+            serializer = BlockUserSerializer(blocked_user, many=True)
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_200_OK,
+                "message": "Blocked user list",
+                "result": serializer.data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"status": "error",
+                     "status_code": status.HTTP_400_BAD_REQUEST,
+                     "message": str(e)}
+            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+    def unblock_user(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            blocked_user = User.objects.get(id=request.data.get('blocked_user'))
+            if not blocked_user:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "User does not exist"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if user == blocked_user:
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "You can not unblock yourself"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if not BlockUser.objects.filter(block_user=blocked_user).exists():
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "User is not blocked"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            block_user = BlockUser.objects.filter(block_user=blocked_user).first()
+            block_user.delete()
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_200_OK,
+                "message": "User unblocked successfully",
+            }, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"status": "error",
                      "status_code": status.HTTP_400_BAD_REQUEST,

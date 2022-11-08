@@ -12,4 +12,11 @@ urlpatterns = [
          name="send_friend_request"),
     path("api/friend_request_list", FriendManagementViewSet.as_view({"get": "friend_request_list"}),
          name="friend_request_list"),
+    path("api/friend_request_action", FriendManagementViewSet.as_view({"post": "friend_request_action"}),
+            name="friend_request_action"),
+    path("api/friend_request_delete", FriendManagementViewSet.as_view({"delete": "friend_request_delete"}),
+            name="friend_request_delete"),
+
+    path("api/friend_list", FriendManagementViewSet.as_view({"get": "friend_list"}), name="friend_list"),
+    path("api/friend_delete", FriendManagementViewSet.as_view({"delete": "friend_delete"}), name="friend_delete"),
 ]

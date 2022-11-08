@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.models import User
+from accounts.models import User, FireBaseNotification, BlockUser
 from django.utils.translation import gettext_lazy as _
 import django.contrib.auth.password_validation as validators
 from django.contrib.auth.hashers import make_password
@@ -7,13 +7,14 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import transaction
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
-                  'dob', 'bio']
+                  'dob', 'bio', 'create_profile', 'is_account']
 
 
 GENDER_CHOICES = (
@@ -27,10 +28,11 @@ class SignupSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(max_length=128, label='Password', style={'input_type': 'password'},
                                      write_only=True)
+    registration_id = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ['username', 'email', 'password', 'registration_id']
 
     @staticmethod
     def validate_password(data):
@@ -42,14 +44,19 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'email': _('Email already exists')})
         if User.objects.filter(username=data['username']).exists():
             raise serializers.ValidationError({'username': _('Username already exists')})
+        if len(data['username']) > 15:
+            raise serializers.ValidationError({'username': _('Username must be less than 15 characters')})
         return data
 
     def create(self, validated_data):
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=make_password(validated_data['password']),
-        )
+        username = validated_data['username']
+        email = validated_data['email']
+        password = validated_data['password']
+        with transaction.atomic():
+            user = User.objects.create(username=username, email=email, password=make_password(password))
+            user.save()
+            if validated_data.get('registration_id'):
+                FireBaseNotification.objects.create(user=user, registration_id=validated_data['registration_id'])
         return user
 
     def to_representation(self, instance):
@@ -71,8 +78,8 @@ class SocialSerializer(serializers.ModelSerializer):
     # def validate(self, data):
     #     if User.objects.filter(email=data['email']).exists():
     #         raise serializers.ValidationError({'email': _('Email already exists')})
-    #     # if User.objects.filter(username=data['username']).exists():
-    #     #     raise serializers.ValidationError({'username': _('Username already exists')})
+    #     if User.objects.filter(username=data['username']).exists():
+    #         raise serializers.ValidationError({'username': _('Username already exists')})
     #     if User.objects.filter(instagram=data['instagram']).exists():
     #         raise serializers.ValidationError({'instagram': _('Instagram already exists')})
     #     return data
@@ -88,6 +95,7 @@ class SocialSerializer(serializers.ModelSerializer):
         else:
             user = User.objects.get(email=validated_data['email'], instagram=validated_data['instagram'])
             return user
+
 
 class CreateUserProfileSerializer(serializers.ModelSerializer):
     profile_pic = serializers.FileField(required=True)
@@ -197,3 +205,14 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         if User.objects.filter(username=username).exists():
             raise serializers.ValidationError({'username': _('Username already exists')})
         return attrs
+
+
+class BlockUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlockUser
+        fields = ['block_user']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['block_user'] = UserSerializer(instance.block_user).data
+        return data

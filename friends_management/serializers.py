@@ -10,7 +10,6 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.response import Response
 from rest_framework import status
 
-
 FRIEND_REQUEST_STATUS = (
     ('accepted', 'Accepted'),
     ('rejected', 'Rejected')
@@ -29,8 +28,6 @@ class FriendRequestListSerializer(serializers.ModelSerializer):
         model = FriendRequest
         fields = ['id', 'sender', 'receiver', 'status', 'created_at', 'updated_at']
 
-        # get send profile data
-
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['sender'] = UserSerializer(instance.sender).data
@@ -40,19 +37,18 @@ class FriendRequestListSerializer(serializers.ModelSerializer):
 
 
 class FriendRequestActionSerializer(serializers.ModelSerializer):
-    friend_request_id = serializers.SlugRelatedField(queryset=FriendRequest.objects.all(), slug_field='id', required=True)
+    friend_request = serializers.SlugRelatedField(queryset=FriendRequest.objects.all(), slug_field='id', required=True)
     status = serializers.ChoiceField(choices=FRIEND_REQUEST_STATUS, required=True)
 
     class Meta:
         model = FriendRequest
-        fields = ['friend_request_id', 'status']
+        fields = ['friend_request', 'status']
 
     def validate(self, attrs):
         status = attrs.get('status')
-        friend_request_id = attrs.get('friend_request_id')
+        friend_request_id = attrs.get('friend_request')
         if not status in ['accepted', 'rejected']:
             raise serializers.ValidationError(_("Status must be accepted or rejected"))
         if not friend_request_id.status == 'pending':
             raise serializers.ValidationError(_("Friend request is already {}").format(friend_request_id.status))
         return attrs
-

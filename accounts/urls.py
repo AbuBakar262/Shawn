@@ -1,5 +1,5 @@
 from rest_framework.routers import SimpleRouter
-from .views import UserViewSet, ProfileViewSet, SocialViewSet
+from .views import UserViewSet, ProfileViewSet, SocialViewSet, BlockUserViewSet
 from django.urls import path, include
 
 router = SimpleRouter(trailing_slash=False)
@@ -19,10 +19,16 @@ urlpatterns = [
     path("api/profile_details", ProfileViewSet.as_view({"get": "profile_details"}), name="profile_details"),
     path("api/profile_edit", ProfileViewSet.as_view({"put": "profile_edit"}), name="profile_edit"),
     path("api/profile_list", ProfileViewSet.as_view({"get": "profile_list"}), name="profile_list"),
+    path("api/profile_status", ProfileViewSet.as_view({"put": "profile_status"}), name="profile_status"),
     path("api/profile_delete", ProfileViewSet.as_view({"delete": "profile_delete"}), name="profile_delete"),
 
     # Social Login
     path("api/social_login", SocialViewSet.as_view({"post": "social_login"}), name="social_login"),
     path("api/social_profile_create", SocialViewSet.as_view({"post": "social_profile_create"}),
-         name="social_profile_create")
+         name="social_profile_create"),
+
+    # Block User
+    path("api/block_user", BlockUserViewSet.as_view({"post": "block_user"}), name="block_user"),
+    path("api/blocked_user_list", BlockUserViewSet.as_view({"get": "blocked_user_list"}), name="blocked_user_list"),
+    path("api/unblock_user", BlockUserViewSet.as_view({"delete": "unblock_user"}), name="unblock_user"),
 ]

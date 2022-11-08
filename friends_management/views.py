@@ -1,4 +1,4 @@
-from accounts.models import User
+from accounts.models import User, BlockUser
 from friends_management.models import FriendRequest, Friend, RejectRequest
 from accounts.serializers import UserSerializer
 from friends_management.serializers import (ContactListSerializer, FriendRequestListSerializer,
@@ -25,8 +25,20 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             friend_list = [friend.friend.id for friend in friend_list]
             reject_list = RejectRequest.objects.filter(user=user)
             reject_list = [reject.rejected_user.id for reject in reject_list]
+            if BlockUser.objects.filter(user=user).exists():
+                block_list = BlockUser.objects.filter(user=user)
+                block_list = [block.block_user.id for block in block_list]
+            else:
+                block_list = []
+            if BlockUser.objects.filter(block_user=user).exists():
+                block_list1 = BlockUser.objects.filter(block_user=user)
+                block_list1 = [block.user.id for block in block_list1]
+                block_list = block_list + block_list1
+            else:
+                block_list1 = []
+            block_list = block_list + block_list1
             contact_list = User.objects.exclude(id__in=friend_list).exclude(id__in=reject_list).exclude(
-                id=user.id).exclude(is_superuser=True)
+                id=user.id).exclude(is_superuser=True).exclude(id__in=block_list)
             serializer = ContactListSerializer(contact_list, many=True)
             return Response({
                 "status": True,

@@ -50,7 +50,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "Friend not found"
                 }, status=status.HTTP_400_BAD_REQUEST)
-            friend_request = FriendRequest.objects.filter(sender=user, receiver=friend).first()
+            friend_request = FriendRequest.objects.filter(user=user, receiver_friend_request=friend).first()
             if friend_request:
                 return Response(data={
                     "status": "error",
@@ -77,7 +77,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request accepted"
                 }, status=status.HTTP_200_OK)
-            friend_request = FriendRequest.objects.create(sender=user, receiver=friend)
+            friend_request = FriendRequest.objects.create(user=user, receiver_friend_request=friend)
             return Response(
                 data={
                     "status": "success",
@@ -99,7 +99,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
     def friend_request_list(self, request, *args, **kwargs):
         try:
             user = request.user
-            friend_request = FriendRequest.objects.filter(receiver=user)
+            friend_request = FriendRequest.objects.filter(receiver_friend_request=user)
             serializer = FriendRequestListSerializer(friend_request, many=True)
             return Response({
                 "status": True,
@@ -132,14 +132,14 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "Friend request not found"
                 }, status=status.HTTP_400_BAD_REQUEST)
-            if friend_request.receiver != user:
+            if friend_request.receiver_friend_request != user:
                 return Response(data={
                     "status": "error",
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "You are not authorized to perform this action"
                 }, status=status.HTTP_400_BAD_REQUEST)
             if serializer.validated_data['status'] == 'accepted':
-                Friend.objects.create(user=friend_request.sender, friend=friend_request.receiver)
+                Friend.objects.create(user=friend_request.user, friend=friend_request.receiver_friend_request)
                 friend_request.delete()
                 return Response(data={
                     "status": "success",
@@ -147,7 +147,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "message": "Friend request accepted"
                 }, status=status.HTTP_200_OK)
             elif serializer.validated_data['status'] == 'rejected':
-                RejectRequest.objects.create(user=friend_request.sender, rejected_user=friend_request.receiver)
+                RejectRequest.objects.create(user=friend_request.user, rejected_user=friend_request.receiver_friend_request)
                 friend_request.delete()
                 return Response(data={
                     "status": "success",
@@ -223,12 +223,12 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "message": "Friend List fetched successfully",
                     "result": serializer.data
                 }, status=status.HTTP_200_OK)
-            else:
+            if not Friend.objects.filter(user=user) and not Friend.objects.filter(friend=user):
                 return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "No friends found"
-                }, status=status.HTTP_400_BAD_REQUEST)
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "No friend found",
+                }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={
                 "status": "error",

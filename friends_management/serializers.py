@@ -26,12 +26,12 @@ class ContactListSerializer(serializers.ModelSerializer):
 class FriendRequestListSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendRequest
-        fields = ['id', 'sender', 'receiver', 'status', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'receiver_friend_request', 'status', 'created_at', 'updated_at']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['sender'] = UserSerializer(instance.sender).data
-        representation['friend_request_count'] = FriendRequest.objects.filter(receiver=instance.receiver,
+        representation['user'] = UserSerializer(instance.user).data
+        representation['friend_request_count'] = FriendRequest.objects.filter(receiver_friend_request=instance.receiver_friend_request,
                                                                               status='pending').count()
         return representation
 

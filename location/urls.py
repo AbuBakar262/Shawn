@@ -3,7 +3,7 @@ from .views import UserLocationViewSet
 from django.urls import path, include
 
 router = SimpleRouter(trailing_slash=False)
-router.register("api/event", UserLocationViewSet, basename="event")
+router.register("api/location", UserLocationViewSet, basename="location")
 
 urlpatterns = [
     path("", include(router.urls)),

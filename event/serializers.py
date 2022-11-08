@@ -11,18 +11,18 @@ from event.models import Event
 
 
 class EventSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(required=True)
-    description = serializers.CharField(required=True)
+    title = serializers.CharField(required=False)
+    description = serializers.CharField(required=False)
     start_date = serializers.DateTimeField(required=True)
-    end_date = serializers.DateTimeField(required=True)
-    address = serializers.CharField(required=True)
+    end_date = serializers.DateTimeField(required=False)
+    address = serializers.CharField(required=False)
     latitude = serializers.FloatField(required=False)
     longitude = serializers.FloatField(required=False)
     photo = serializers.FileField(required=False)
 
     class Meta:
         model = Event
-        fields = ['id', 'user', 'title', 'description', 'start_date', 'end_date', 'address', 'created_at',
+        fields = ['id', 'user', 'title', 'description', 'start_date', 'end_date', 'address', 'latitude', 'longitude', 'photo', 'created_at',
                   'updated_at']
 
 
@@ -32,5 +32,10 @@ class EventListSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'title', 'description', 'start_date', 'end_date', 'address', 'created_at',
                   'updated_at']
 
+
 class GetEventSerializer(serializers.Serializer):
-    id = serializers.SlugRelatedField(queryset=Event.objects.all(), slug_field='id', required=True)
+    event = serializers.SlugRelatedField(queryset=Event.objects.all(), slug_field='id', required=True)
+
+class HideEventSerializer(serializers.Serializer):
+    event = serializers.SlugRelatedField(queryset=Event.objects.all(), slug_field='id', required=True)
+    hide = serializers.BooleanField(required=True)

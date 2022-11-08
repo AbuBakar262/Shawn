@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from accounts.serializers import UserSerializer
 from accounts.models import User
-from event.models import UserLocation
+from location.models import UserLocation
 from django.utils.translation import gettext_lazy as _
 import django.contrib.auth.password_validation as validators
 from django.contrib.auth.hashers import make_password

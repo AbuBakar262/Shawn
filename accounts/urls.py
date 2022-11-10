@@ -11,8 +11,10 @@ urlpatterns = [
     path("api/signup", UserViewSet.as_view({"post": "signup"}), name="signup"),
     path("api/create_profile", UserViewSet.as_view({"post": "create_profile"}), name="create_profile"),
     path("api/login", UserViewSet.as_view({"post": "login"}), name="login"),
+
     path("api/forgot_password", UserViewSet.as_view({"post": "forgot_password"}), name="forgot_password"),
-    path("api/reset_password/<uidb64>/<token>/", UserViewSet.as_view({"post": "reset_password"}),
+    path("api/verify_otp", UserViewSet.as_view({"post": "verify_otp"}), name="verify_otp"),
+    path("api/reset_password", UserViewSet.as_view({"post": "reset_password"}),
          name="reset_password"),
 
     # User Profile

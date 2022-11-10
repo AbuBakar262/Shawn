@@ -4,13 +4,9 @@ from django.utils.translation import gettext_lazy as _
 import django.contrib.auth.password_validation as validators
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework.response import Response
-from rest_framework import status
 from django.db import transaction
 from datetime import date
 from dateutil.relativedelta import relativedelta
-
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -167,17 +163,30 @@ class SigninSerializer(serializers.ModelSerializer):
 
 
 class ForgotPasswordSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(required=True)
+    email = serializers.EmailField(required=False)
+    phone = serializers.CharField(required=False)
 
     class Meta:
         model = User
-        fields = ['email']
+        fields = ['email', 'phone']
 
     def validate(self, attrs):
         email = attrs.get('email')
-        if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError(_('Email does not exist'))
+        phone = attrs.get('phone')
+        if email is None and phone is None:
+            raise serializers.ValidationError({'error': _('Email or Phone is required, Please enter one of them')})
+        if email:
+            if not User.objects.filter(email=email).exists():
+                raise serializers.ValidationError({'error': _('Email does not exist')})
+        if phone:
+            if not User.objects.filter(phone=phone).exists():
+                raise serializers.ValidationError({'error': _('Phone does not exist')})
         return attrs
+
+
+class VerifyOtpSerializer(serializers.Serializer):
+    user = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='id', required=True)
+    otp = serializers.CharField(required=True)
 
 
 class ChangePasswordSerializer(serializers.ModelSerializer):

@@ -1,15 +1,9 @@
-from accounts.models import User, BlockUser
-from friends_management.models import FriendRequest, Friend, RejectRequest
-from accounts.serializers import UserSerializer
-from friends_management.serializers import (ContactListSerializer, FriendRequestListSerializer,
-                                            FriendRequestActionSerializer)
+from accounts.models import *
+from friends_management.serializers import *
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from django.db.models import Q
 
 
 # Create your views here.
@@ -130,12 +124,12 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
         try:
             user = request.user
             serializer = FriendRequestActionSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "result": serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
             friend_request_id = serializer.validated_data['friend_request']
             friend_request = FriendRequest.objects.filter(id=friend_request_id.id).first()
             if not friend_request:

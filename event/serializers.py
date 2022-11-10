@@ -1,12 +1,4 @@
-from django.utils.translation import gettext_lazy as _
-import django.contrib.auth.password_validation as validators
-from django.contrib.auth import authenticate
-from rest_framework.response import Response
-from rest_framework import status
-from django.db import transaction
 from rest_framework import serializers
-from accounts.serializers import UserSerializer
-from accounts.models import User
 from event.models import Event
 
 
@@ -35,6 +27,7 @@ class EventListSerializer(serializers.ModelSerializer):
 
 class GetEventSerializer(serializers.Serializer):
     event = serializers.SlugRelatedField(queryset=Event.objects.all(), slug_field='id', required=True)
+
 
 class HideEventSerializer(serializers.Serializer):
     event = serializers.SlugRelatedField(queryset=Event.objects.all(), slug_field='id', required=True)

@@ -1,12 +1,8 @@
-from accounts.models import User
-from location.models import UserLocation
-from location.serializers import (UserLocationSerializer, UserLocationListSerializer)
+from location.serializers import *
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 
 
 # Create your views here.
@@ -19,12 +15,12 @@ class UserLocationViewSet(viewsets.ModelViewSet):
         try:
             user = request.user
             serializer = UserLocationSerializer(data=request.data, context={'request': request})
-            if not serializer.is_valid():
-                return Response({
-                    'status': False,
-                    'status_code': status.HTTP_400_BAD_REQUEST,
-                    'message': serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
             serializer.save(user=user)
             return Response({
                 'status': True,
@@ -43,12 +39,12 @@ class UserLocationViewSet(viewsets.ModelViewSet):
             user = request.user
             locations = UserLocation.objects.filter(user=user)
             serializer = UserLocationListSerializer(locations, many=True)
-            if not serializer.data:
-                return Response({
-                    'status': False,
-                    'status_code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'Location not found'
-                }, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
             return Response({
                 'status': True,
                 'status_code': status.HTTP_200_OK,

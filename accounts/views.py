@@ -1,29 +1,15 @@
-from accounts.models import User, BlockUser, FireBaseNotification
 from friends_management.models import Friend
-from location.models import UserLocation
-from event.models import Event
-from accounts.serializers import (SignupSerializer, UserSerializer,
-                                  CreateUserProfileSerializer, SigninSerializer,
-                                  ForgotPasswordSerializer, ChangePasswordSerializer,
-                                  UserProfileUpdateSerializer, SocialSerializer,
-                                  SocialCreateUserProfileSerializer, BlockUserSerializer)
-from location.serializers import UserLocationListSerializer, UserLocationSerializer
-from event.serializers import EventListSerializer, EventSerializer
+from accounts.serializers import *
+from location.serializers import *
+from event.serializers import *
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from accounts.utils import send_otp_via_email
+from accounts.utils import *
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from sean_backend.settings import FRONTEND_FORGET_PASSWORD_URL
-from django.utils import timezone
-from datetime import datetime, timedelta
-from django.db.models import Q
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -37,12 +23,12 @@ class UserViewSet(viewsets.ModelViewSet):
     def signup(self, request, *args, **kwargs):
         try:
             serializer = SignupSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             return Response(data={
                 "status": "success",
@@ -102,12 +88,12 @@ class UserViewSet(viewsets.ModelViewSet):
     def login(self, request, *args, **kwargs):
         try:
             serializer = SigninSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
             user = User.objects.get(email=request.data.get('email'))
             user_serializer = UserSerializer(user)
             if not user.create_profile:
@@ -148,22 +134,66 @@ class UserViewSet(viewsets.ModelViewSet):
     def forgot_password(self, request, *args, **kwargs):
         try:
             serializer = ForgotPasswordSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            user = User.objects.get(email=request.data.get('email'))
-            link = FRONTEND_FORGET_PASSWORD_URL + urlsafe_base64_encode(
-                force_bytes(user.pk)) + "/" + PasswordResetTokenGenerator().make_token(user) + "/"
-            send_otp_via_email(request.data.get('email'), link)
-            response = {"status": "success",
-                        "status_code": status.HTTP_200_OK,
-                        "message": "Reset password link sent to your email",
-                        "responsePayload": serializer.data}
-            return Response(data=response, status=status.HTTP_200_OK)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            phone = request.data.get('phone')
+            email = request.data.get('email')
+            if phone:
+                user = User.objects.filter(phone=phone).first()
+                send_otp_phone(user.phone)
+                user_serializer = UserSerializer(user)
+            else:
+                user = User.objects.filter(email=email).first()
+                send_otp_email(email)
+                user_serializer = UserSerializer(user)
+            return Response(data={
+                "status": "success","status_code": status.HTTP_200_OK,
+                "message": "OTP sent to phone number successfully",
+                "result": {
+                    "user": user_serializer.data,
+                }
+            }, status=status.HTTP_200_OK)
         except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"status": "error", "status_code": status.HTTP_400_BAD_REQUEST, "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def verify_otp(self, request, *args, **kwargs):
+        try:
+            serializer = VerifyOtpSerializer(data=request.data)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            otp = serializer.validated_data.get('otp')
+            user = User.objects.get(id=request.data.get('user'))
+            phone_otp = verify_otp_phone(user.phone, otp)
+            if phone_otp != 'approved':
+                return Response(data={
+                    "status": "error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "message": "Invalid OTP"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            user_serializer = UserSerializer(user)
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_200_OK,
+                "message": "OTP verified successfully please reset your password!",
+                "result": {
+                    "user": user_serializer.data,
+                }
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         operation_description="Reset Password",
@@ -175,42 +205,37 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def reset_password(self, request, *args, **kwargs):
         try:
-            uid = urlsafe_base64_decode(kwargs['uidb64']).decode()
-            if not User.objects.filter(pk=uid).exists():
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "User does not exist"
-                }, status=status.HTTP_400_BAD_REQUEST)
-            user = User.objects.get(pk=uid)
-            if not PasswordResetTokenGenerator().check_token(user, kwargs['token']):
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "Invalid token"
-                }, status=status.HTTP_400_BAD_REQUEST)
             serializer = ChangePasswordSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.get(id=self.request.data.get('user'))
             if user.check_password(request.data.get('password')):
                 return Response(data={
                     "status": "error",
                     "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "Your new password must be different from the old password",
+                    "message": "New password cannot be same as old password!"
                 }, status=status.HTTP_400_BAD_REQUEST)
-            user.set_password(serializer.data.get('password'))
+            user.set_password(serializer.validated_data.get('password'))
             user.save()
             user_serializer = UserSerializer(user)
-            response = {"status": "success",
-                        "status_code": status.HTTP_200_OK,
-                        "message": "Password changed successfully",
-                        "responsePayload": user_serializer.data}
-            return Response(data=response, status=status.HTTP_200_OK)
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_200_OK,
+                "message": "Password changed successfully",
+                "result": {
+                    "user": user_serializer.data,
+                }
+            }, status=status.HTTP_200_OK)
         except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
@@ -252,15 +277,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
         try:
             user = request.user
             serializer = UserProfileUpdateSerializer(user, data=request.data)
-            if not serializer.is_valid():
-                return Response(
-                    data={
-                        "status": "error",
-                        "status_code": status.HTTP_400_BAD_REQUEST,
-                        "message": serializer.errors
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             user_serializer = UserSerializer(user)
             response = {"status": "success",
@@ -345,12 +367,12 @@ class SocialViewSet(viewsets.ModelViewSet):
     def social_login(self, request, *args, **kwargs):
         try:
             serializer = SocialSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             data = serializer.data
             if data.get("create_profile") == True:

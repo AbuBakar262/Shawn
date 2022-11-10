@@ -4,7 +4,7 @@ from django.urls import path, include
 
 router = SimpleRouter(trailing_slash=False)
 router.register("api/user", UserViewSet, basename="signup")
-router.register("api/profile", ProfileViewSet, basename="profile")
+router.register("api/user_profile", ProfileViewSet, basename="profile")
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -16,11 +16,11 @@ urlpatterns = [
          name="reset_password"),
 
     # User Profile
-    path("api/profile_details", ProfileViewSet.as_view({"get": "profile_details"}), name="profile_details"),
-    path("api/profile_edit", ProfileViewSet.as_view({"put": "profile_edit"}), name="profile_edit"),
+    path("api/profile", ProfileViewSet.as_view({"get": "profile"}), name="profile"),
+    path("api/edit_profile", ProfileViewSet.as_view({"put": "edit_profile"}), name="edit_profile"),
     path("api/profile_list", ProfileViewSet.as_view({"get": "profile_list"}), name="profile_list"),
     path("api/profile_status", ProfileViewSet.as_view({"put": "profile_status"}), name="profile_status"),
-    path("api/profile_delete", ProfileViewSet.as_view({"delete": "profile_delete"}), name="profile_delete"),
+    path("api/delete_profile", ProfileViewSet.as_view({"delete": "delete_profile"}), name="delete_profile"),
 
     # Social Login
     path("api/social_login", SocialViewSet.as_view({"post": "social_login"}), name="social_login"),

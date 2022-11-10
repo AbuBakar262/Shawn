@@ -1,10 +1,14 @@
 from accounts.models import User, BlockUser, FireBaseNotification
 from friends_management.models import Friend
+from location.models import UserLocation
+from event.models import Event
 from accounts.serializers import (SignupSerializer, UserSerializer,
                                   CreateUserProfileSerializer, SigninSerializer,
                                   ForgotPasswordSerializer, ChangePasswordSerializer,
                                   UserProfileUpdateSerializer, SocialSerializer,
                                   SocialCreateUserProfileSerializer, BlockUserSerializer)
+from location.serializers import UserLocationListSerializer, UserLocationSerializer
+from event.serializers import EventListSerializer, EventSerializer
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
@@ -17,6 +21,9 @@ from accounts.utils import send_otp_via_email
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from sean_backend.settings import FRONTEND_FORGET_PASSWORD_URL
+from django.utils import timezone
+from datetime import datetime, timedelta
+from django.db.models import Q
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -208,29 +215,30 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-
     # permission_classes = [IsAuthenticated]
 
-    def profile_details(self, request, *args, **kwargs):
+    def profile(self, request, *args, **kwargs):
         try:
-            user = User.objects.get(id=request.data.get('id'))
-            if not user:
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "User does not exist"
-                }, status=status.HTTP_400_BAD_REQUEST)
+            user = request.user
             user_serializer = UserSerializer(user)
+            user_event_serializer = EventListSerializer(Event.objects.filter(user=user), many=True)
+            user_location_serializer = UserLocationSerializer(UserLocation.objects.filter(user=user), many=True)
             response = {"status": "success",
                         "status_code": status.HTTP_200_OK,
                         "message": "User profile details",
-                        "responsePayload": user_serializer.data}
+                        "result": {
+                            "user": user_serializer.data,
+                            "location": user_location_serializer.data,
+                            "map": user_event_serializer.data,
+                        }}
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"status": "error",
                      "status_code": status.HTTP_400_BAD_REQUEST,
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+
 
     @swagger_auto_schema(
         operation_description="Profile Edit",
@@ -240,7 +248,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             400: openapi.Response('Bad request', UserSerializer),
         }
     )
-    def profile_edit(self, request, *args, **kwargs):
+    def edit_profile(self, request, *args, **kwargs):
         try:
             user = request.user
             serializer = UserProfileUpdateSerializer(user, data=request.data)
@@ -304,7 +312,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
-    def profile_delete(self, request, *args, **kwargs):
+    def delete_profile(self, request, *args, **kwargs):
         try:
             user = request.user
             user.delete()
@@ -319,9 +327,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
     def get_permissions(self):
-        if self.action in ['profile_edit', 'profile_delete', 'profile_status']:
+        if self.action in ['edit_profile'] or self.action in ['delete_profile'] or self.action in ['profile_status'] or self.action in ['profile']:
             permission_classes = [IsAuthenticated]
-        if self.action in ['profile_details', 'profile_list']:
+        else:
             permission_classes = [AllowAny]
         return [permission() for permission in permission_classes]
 

@@ -15,7 +15,7 @@ class UserLocationViewSet(viewsets.ModelViewSet):
     queryset = UserLocation.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def save_location(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         try:
             user = request.user
             serializer = UserLocationSerializer(data=request.data, context={'request': request})
@@ -38,7 +38,7 @@ class UserLocationViewSet(viewsets.ModelViewSet):
                 'message': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
-    def saved_locations(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs):
         try:
             user = request.user
             locations = UserLocation.objects.filter(user=user)
@@ -61,24 +61,17 @@ class UserLocationViewSet(viewsets.ModelViewSet):
                 'message': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
-    def get_location(self, request, *args, **kwargs):
+    def retrieve(self, request, *args, **kwargs):
         try:
             user = request.user
-            location = request.data.get('location')
-            location = UserLocation.objects.filter(user=user, id=location).first()
-            if location is None:
+            location = self.get_object()
+            if user != location.user:
                 return Response({
                     'status': False,
                     'status_code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'Location not found'
+                    'message': 'You are not allowed to view this location'
                 }, status=status.HTTP_400_BAD_REQUEST)
             serializer = UserLocationListSerializer(location)
-            if not serializer.data:
-                return Response({
-                    'status': False,
-                    'status_code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'No location found'
-                }, status=status.HTTP_400_BAD_REQUEST)
             return Response({
                 'status': True,
                 'status_code': status.HTTP_200_OK,
@@ -91,17 +84,10 @@ class UserLocationViewSet(viewsets.ModelViewSet):
                 'message': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete_location(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         try:
             user = request.user
-            location = request.data.get('location')
-            location = UserLocation.objects.filter(user=user, id=location).first()
-            if location is None:
-                return Response({
-                    'status': False,
-                    'status_code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'Location not found'
-                }, status=status.HTTP_400_BAD_REQUEST)
+            location = self.get_object()
             if user != location.user:
                 return Response({
                     'status': False,

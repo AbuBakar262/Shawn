@@ -30,7 +30,8 @@ DEBUG = os.getenv('DEBUG', False) == 'True'
 
 ALLOWED_HOSTS = ['*']
 
-
+ACCOUNT_SID_TWILIO = os.getenv('ACCOUNT_SID_TWILIO')
+AUTH_TOKEN_TWILIO = os.getenv('AUTH_TOKEN_TWILIO')
 # Application definition
 
 INSTALLED_APPS = [

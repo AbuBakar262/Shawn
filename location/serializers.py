@@ -26,8 +26,3 @@ class UserLocationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserLocation
         fields = ['id', 'user', 'latitude', 'longitude', 'address', 'created_at', 'updated_at']
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['user'] = UserSerializer(instance.user).data
-        return representation

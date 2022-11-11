@@ -1,7 +1,9 @@
 from django.contrib import admin
-from .models import User, FireBaseNotification, BlockUser
+from .models import *
 
 # Register your models here.
 admin.site.register(User)
 admin.site.register(FireBaseNotification)
 admin.site.register(BlockUser)
+admin.site.register(Social)
+admin.site.register(Profile)

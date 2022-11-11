@@ -53,23 +53,36 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def create_profile(self, request, *args, **kwargs):
         try:
-            email = request.data.get('email')
-            user = User.objects.get(email=email)
-            user_serializer = CreateUserProfileSerializer(user, data=request.data)
-            if user_serializer.is_valid():
-                user_serializer.save(create_profile=True)
-                return Response(data={
-                    "status": "success",
-                    "status_code": status.HTTP_201_CREATED,
-                    "message": "User profile created successfully",
-                    "result": user_serializer.data
-                }, status=status.HTTP_201_CREATED)
-            else:
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": user_serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+            serializer = CreateUserProfileSerializer(data=request.data)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            User.objects.filter(id=request.data.get("user")).update(create_profile=True)
+            user = User.objects.get(id=serializer.data.get("user"))
+            user.create_profile = True
+            user.save()
+            profile = Profile.objects.get(user=serializer.data.get("user"))
+            user_serializer = UserSerializer(user)
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_201_CREATED,
+                "message": "User profile created successfully",
+                "result": {
+                    "id": profile.id,
+                    "profile_pic": profile.profile_pic.url,
+                    "gender": profile.gender,
+                    "phone": profile.phone,
+                    "dob": profile.dob,
+                    "bio": profile.bio,
+                    "user": user_serializer.data,
+                    "access_token": str(AccessToken.for_user(request.user)),
+                    "refresh_token": str(RefreshToken.for_user(request.user))
+                }
+            }, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(data={
                 "status": "error",
@@ -86,6 +99,7 @@ class UserViewSet(viewsets.ModelViewSet):
         }
     )
     def login(self, request, *args, **kwargs):
+        global user
         try:
             serializer = SigninSerializer(data=request.data)
             try:
@@ -94,14 +108,21 @@ class UserViewSet(viewsets.ModelViewSet):
                 error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            user = User.objects.get(email=request.data.get('email'))
+            email = request.data.get('email')
+            username = request.data.get('username')
+            if email:
+                user = User.objects.get(email=email)
+            elif username:
+                user = User.objects.get(username=username)
             user_serializer = UserSerializer(user)
+            data = user_serializer.data
+            data['account_type'] = "Email"
             if not user.create_profile:
                 return Response(data={
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
                     "message": "User logged in successfully",
-                    "result": user_serializer.data
+                    "result": data
                 }, status=status.HTTP_200_OK)
             return Response(
                 data={
@@ -109,7 +130,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_200_OK,
                     "message": "User logged in successfully",
                     "result": {
-                        "user": user_serializer.data,
+                        "user": data,
                         "access": str(AccessToken.for_user(user)),
                         "refresh": str(RefreshToken.for_user(user))
                     }
@@ -151,7 +172,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 send_otp_email(email)
                 user_serializer = UserSerializer(user)
             return Response(data={
-                "status": "success","status_code": status.HTTP_200_OK,
+                "status": "success", "status_code": status.HTTP_200_OK,
                 "message": "OTP sent to phone number successfully",
                 "result": {
                     "user": user_serializer.data,
@@ -159,7 +180,7 @@ class UserViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"status": "error", "status_code": status.HTTP_400_BAD_REQUEST, "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+                                  }, status=status.HTTP_400_BAD_REQUEST)
 
     def verify_otp(self, request, *args, **kwargs):
         try:
@@ -240,6 +261,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
+
     # permission_classes = [IsAuthenticated]
 
     def profile(self, request, *args, **kwargs):
@@ -262,8 +284,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                      "status_code": status.HTTP_400_BAD_REQUEST,
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
-
-
 
     @swagger_auto_schema(
         operation_description="Profile Edit",
@@ -349,7 +369,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
     def get_permissions(self):
-        if self.action in ['edit_profile'] or self.action in ['delete_profile'] or self.action in ['profile_status'] or self.action in ['profile']:
+        if self.action in ['edit_profile'] or self.action in ['delete_profile'] or self.action in [
+            'profile_status'] or self.action in ['profile']:
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [AllowAny]
@@ -362,11 +383,11 @@ class SocialViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(
         operation_description="Social Signup",
-        request_body=SocialSerializer
+        request_body=SocialSignupSerializer
     )
-    def social_login(self, request, *args, **kwargs):
+    def social_signup(self, request, *args, **kwargs):
         try:
-            serializer = SocialSerializer(data=request.data)
+            serializer = SocialSignupSerializer(data=request.data)
             try:
                 serializer.is_valid(raise_exception=True)
             except Exception as e:
@@ -401,40 +422,93 @@ class SocialViewSet(viewsets.ModelViewSet):
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
-        operation_description="Social Profile Create",
-        request_body=SocialCreateUserProfileSerializer
+        operation_description="Social Login",
+        request_body=SocialSignupSerializer
     )
-    def social_profile_create(self, request, *args, **kwargs):
+    def social_login(self, request, *args, **kwargs):
         try:
-            email = request.data.get('email')
-            user = User.objects.get(email=email)
-            serializer = SocialCreateUserProfileSerializer(user, data=request.data)
-            if serializer.is_valid():
-                serializer.save(create_profile=True)
+            serializer = SocialLoginSerializer(data=request.data)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            serializer_data = serializer.data
+            if serializer_data.get("create_profile"):
+                user = Social.objects.filter(id=serializer_data.get("id")).first()
+                result = {
+                    "user": serializer_data,
+                    "access": str(AccessToken.for_user(user)),
+                    "refresh": str(RefreshToken.for_user(user)),
+                }
                 return Response(data={
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
-                    "message": "User profile created successfully",
-                    "responsePayload": serializer.data
+                    "message": "User Login successfully",
+                    "result": result
                 }, status=status.HTTP_200_OK)
             else:
                 return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "User Login successfully",
+                    "result": serializer_data
+                }, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"status": "error",
                      "status_code": status.HTTP_400_BAD_REQUEST,
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description="Social Profile Create",
+        request_body=SocialCreateUserProfileSerializer
+    )
+    def social_profile_create(self, request, *args, **kwargs):
+        try:
+            serializer = SocialCreateUserProfileSerializer(data=request.data)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            social_user = Social.objects.get(id=serializer.data.get("social"))
+            social_user.create_profile = True
+            social_user.save()
+            social_profile = Profile.objects.get(social=serializer.data.get("social"))
+            social = SocialUserSerializer(social_user, many=False)
+            return Response(data={
+                "status": "success",
+                "status_code": status.HTTP_201_CREATED,
+                "message": "User profile created successfully",
+                "result": {
+                    "id": social_profile.id,
+                    "profile_pic": social_profile.profile_pic.url,
+                    "gender": social_profile.gender,
+                    "phone": social_profile.phone,
+                    "dob": social_profile.dob,
+                    "bio": social_profile.bio,
+                    "user": social.data,
+                    "access": str(AccessToken.for_user(social_user)),
+                    "refresh": str(RefreshToken.for_user(social_user)),
+                }
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(data={
+                "status": "error",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class BlockUserViewSet(viewsets.ModelViewSet):
     queryset = BlockUser.objects.all()
     serializer_class = BlockUserSerializer
     permission_classes = [IsAuthenticated]
-
 
     def block_user(self, request, *args, **kwargs):
         try:

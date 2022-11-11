@@ -1,19 +1,21 @@
-from rest_framework import serializers
-from accounts.models import User, FireBaseNotification, BlockUser
-from django.utils.translation import gettext_lazy as _
-import django.contrib.auth.password_validation as validators
-from django.contrib.auth.hashers import make_password
-from django.contrib.auth import authenticate
-from django.db import transaction
 from datetime import date
+
+import django.contrib.auth.password_validation as validators
 from dateutil.relativedelta import relativedelta
+from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import make_password
+from django.db import transaction
+from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+
+from .models import *
+from .utils import create_social_signup
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
-                  'dob', 'bio', 'create_profile', 'is_account']
+        fields = ['id', 'username', 'email', 'create_profile', 'is_account']
 
 
 GENDER_CHOICES = (
@@ -31,7 +33,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'registration_id']
+        fields = ['username', 'email', 'password', 'registration_id', 'create_profile', 'is_account']
 
     @staticmethod
     def validate_password(data):
@@ -64,49 +66,77 @@ class SignupSerializer(serializers.ModelSerializer):
         return representation
 
 
-class SocialSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=False)
-    email = serializers.EmailField(required=True)
-    instagram = serializers.CharField(required=True)
+class SocialSignupSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=True)
+    email = serializers.EmailField(required=False)
+    instagram = serializers.CharField(required=False)
+    apple = serializers.CharField(required=False)
 
     class Meta:
-        model = User
-        fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram',
-                  'dob', 'bio', 'create_profile']
+        model = Social
+        fields = ['id', 'username', 'email', 'apple', 'instagram', 'account_type', 'create_profile', 'is_account']
 
-    # def validate(self, data):
-    #     if User.objects.filter(email=data['email']).exists():
-    #         raise serializers.ValidationError({'email': _('Email already exists')})
-    #     if User.objects.filter(username=data['username']).exists():
-    #         raise serializers.ValidationError({'username': _('Username already exists')})
-    #     if User.objects.filter(instagram=data['instagram']).exists():
-    #         raise serializers.ValidationError({'instagram': _('Instagram already exists')})
-    #     return data
+    def validate(self, attrs):
+        username = attrs.get("username")
+        if Social.objects.filter(username=username).exists():
+            raise serializers.ValidationError({'username': _('username already exists')})
+        if len(username) > 15:
+            raise serializers.ValidationError({'username': _('Username must be less than 15 characters')})
+        return attrs
 
     def create(self, validated_data):
-        if not User.objects.filter(email=validated_data['email'], instagram=validated_data['instagram']).exists():
-            user = User.objects.create(
-                username=validated_data['username'],
-                email=validated_data['email'],
-                instagram=validated_data['instagram'],
-            )
-            return user
+        user = create_social_signup(validated_data=validated_data)
+        return user
+
+
+class SocialLoginSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True)
+    username = serializers.CharField(required=True)
+    instagram = serializers.CharField(required=False)
+    apple = serializers.CharField(required=False)
+
+    class Meta:
+        model = Social
+        fields = ['id', 'username', 'email', 'apple', 'instagram', 'account_type', 'create_profile', 'is_account']
+
+    def validate(self, attrs):
+        username = attrs.get("username")
+        apple = attrs.get("apple")
+        instagram = attrs.get("instagram")
+        if not Social.objects.filter(username=username).exists():
+            raise serializers.ValidationError({'username': _('username does not exists')})
+        if instagram:
+            # if not Social.objects.filter(instagram=instagram).exists():
+            #     raise serializers.ValidationError({'instagram': _('instagram ID does not exists')})
+
+            if not Social.objects.filter(username=username, instagram=instagram).exists():
+                raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
+            else:
+                user = Social.objects.filter(username=username, instagram=instagram).first()
+                return user
         else:
-            user = User.objects.get(email=validated_data['email'], instagram=validated_data['instagram'])
-            return user
+            # if not Social.objects.filter(apple=apple).exists():
+            #     raise serializers.ValidationError({'apple': _('apple ID does not exists')})
+
+            if not Social.objects.filter(username=username, apple=apple).exists():
+                raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
+            else:
+                user = Social.objects.filter(username=username, apple=apple).first()
+                return user
 
 
 class CreateUserProfileSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True)
+    user = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field="id", required=True)
     profile_pic = serializers.FileField(required=True)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     phone = serializers.CharField(required=True)
-    instagram = serializers.CharField(required=True)
     dob = serializers.DateField(required=True)
     bio = serializers.CharField(required=True)
 
     class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'profile_pic', 'gender', 'phone', 'instagram', 'dob', 'bio']
+        model = Profile
+        fields = ['id', 'user', 'profile_pic', 'gender', 'phone', 'dob', 'bio']
 
     def validate(self, attrs):
         if attrs.get("dob"):
@@ -114,19 +144,24 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
             if age < 16:
                 raise serializers.ValidationError(
                     {'dob': _("You must be 16 or older to use Sean APP")})
+        if Profile.objects.filter(phone=attrs.get("phone")).exists():
+            raise serializers.ValidationError(
+                {'phone': _("Phone number already exists")})
         return attrs
 
 
 class SocialCreateUserProfileSerializer(serializers.ModelSerializer):
+    social = serializers.SlugRelatedField(queryset=Social.objects.all(), slug_field="id", required=True)
     profile_pic = serializers.FileField(required=True)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     phone = serializers.CharField(required=True)
     dob = serializers.DateField(required=True)
     bio = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True, write_only=True)
 
     class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'profile_pic', 'gender', 'phone', 'instagram', 'dob', 'bio']
+        model = Profile
+        fields = ['id', 'social', 'profile_pic', 'gender', 'phone', 'dob', 'bio', 'email']
 
     def validate(self, attrs):
         if attrs.get("dob"):
@@ -134,11 +169,40 @@ class SocialCreateUserProfileSerializer(serializers.ModelSerializer):
             if age < 16:
                 raise serializers.ValidationError(
                     {'dob': _("You must be 16 or older to use Sean APP")})
+        if Profile.objects.filter(phone=attrs.get("phone")).exists():
+            raise serializers.ValidationError(
+                {'phone': _("Phone number already exists")})
+        if Social.objects.filter(email=attrs.get("email")).exists():
+            raise serializers.ValidationError(
+                {'email': _("Email already exists")})
         return attrs
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            social_user = validated_data.get("social")
+            email = validated_data.pop("email")
+            if not social_user.email:
+                social_user.email = email
+                social_user.save()
+            Profile.objects.create(**validated_data)
+            return validated_data
+
+
+class SocialUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Social
+        fields = ['id', 'username', 'email', 'instagram', 'apple', 'create_profile', 'is_account', 'account_type']
+
+
+class SocialProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['id', 'social', 'profile_pic', 'gender', 'phone', 'dob', 'bio']
 
 
 class SigninSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(required=True)
+    email = serializers.EmailField(required=False)
+    username = serializers.CharField(required=False)
     password = serializers.CharField(
         max_length=128,
         label='Password',
@@ -149,11 +213,22 @@ class SigninSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ['email', 'username', 'password']
 
     def validate(self, attrs):
+        global user
         email = attrs.get('email')
         password = attrs.get('password')
+        username = attrs.get('username')
+        if username:
+            if not User.objects.filter(username=username).exists():
+                raise serializers.ValidationError({'username': _('username does not exists')})
+            else:
+                user_email = User.objects.filter(username=username).first().email
+                user = authenticate(email=user_email, password=password)
+                if not user:
+                    raise serializers.ValidationError({'error': _('Invalid credentials')})
+
         if email and password:
             user = authenticate(email=email, password=password)
             if not user:

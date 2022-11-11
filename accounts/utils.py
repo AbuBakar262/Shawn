@@ -1,6 +1,7 @@
 import random
 import string
 from twilio.rest import Client
+from accounts.models import Social
 from sean_backend.settings import ACCOUNT_SID_TWILIO, AUTH_TOKEN_TWILIO
 
 
@@ -56,3 +57,24 @@ def verify_otp_email(to, code):
             return e
     except Exception as e:
         return e.msg
+
+
+def create_social_signup(validated_data):
+    username = validated_data['username']
+    if 'instagram' in validated_data:
+        instagram = validated_data['instagram']
+        if instagram:
+            if 'email' in validated_data:
+                user = Social.objects.create(username=username, instagram=instagram, email=validated_data['email'],
+                                             account_type='Instagram')
+            else:
+                user = Social.objects.create(username=username, instagram=instagram, account_type='Instagram')
+            return user
+    else:
+        apple = validated_data['apple']
+        if 'email' in validated_data:
+            user = Social.objects.create(username=username, apple=apple,  email=validated_data['email'],
+                                         account_type='Apple')
+        else:
+            user = Social.objects.create(username=username, apple=apple, account_type='Apple')
+        return user

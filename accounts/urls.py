@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/delete_profile", ProfileViewSet.as_view({"delete": "delete_profile"}), name="delete_profile"),
 
     # Social Login
+    path("api/social_signup", SocialViewSet.as_view({"post": "social_signup"}), name="social_signup"),
     path("api/social_login", SocialViewSet.as_view({"post": "social_login"}), name="social_login"),
     path("api/social_profile_create", SocialViewSet.as_view({"post": "social_profile_create"}),
          name="social_profile_create"),

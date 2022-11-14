@@ -9,7 +9,6 @@ router.register("api/user_profile", ProfileViewSet, basename="profile")
 urlpatterns = [
     path("", include(router.urls)),
     path("api/signup", UserViewSet.as_view({"post": "signup"}), name="signup"),
-    path("api/create_profile", UserViewSet.as_view({"post": "create_profile"}), name="create_profile"),
     path("api/login", UserViewSet.as_view({"post": "login"}), name="login"),
 
     path("api/forgot_password", UserViewSet.as_view({"post": "forgot_password"}), name="forgot_password"),
@@ -27,8 +26,6 @@ urlpatterns = [
     # Social Login
     path("api/social_signup", SocialViewSet.as_view({"post": "social_signup"}), name="social_signup"),
     path("api/social_login", SocialViewSet.as_view({"post": "social_login"}), name="social_login"),
-    path("api/social_profile_create", SocialViewSet.as_view({"post": "social_profile_create"}),
-         name="social_profile_create"),
 
     # Block User
     path("api/block_user", BlockUserViewSet.as_view({"post": "block_user"}), name="block_user"),

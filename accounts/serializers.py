@@ -112,6 +112,8 @@ class SocialLoginSerializer(serializers.ModelSerializer):
         username = attrs.get("username")
         apple = attrs.get("apple")
         instagram = attrs.get("instagram")
+        if not instagram and not apple:
+            raise serializers.ValidationError({'error': _('instagram or apple one is required')})
         if not User.objects.filter(username=username).exists():
             raise serializers.ValidationError({'username': _('username does not exists')})
         if instagram:

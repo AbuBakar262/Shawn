@@ -96,14 +96,15 @@ class SocialSignupSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         username = validated_data['username']
+        email = validated_data['email']
         with transaction.atomic():
             if "instagram" in validated_data:
                 instagram = validated_data['instagram']
-                user = User.objects.create(username=username, instagram=instagram, account_type="Instagram")
+                user = User.objects.create(username=username, instagram=instagram, email=email, account_type="Instagram")
                 user.save()
             if "apple" in validated_data:
                 apple = validated_data['apple']
-                user = User.objects.create(username=username, apple=apple, account_type="Apple")
+                user = User.objects.create(username=username, apple=apple, email=email, account_type="Apple")
                 user.save()
             if validated_data.get('registration_id'):
                 FireBaseNotification.objects.create(user=user, registration_id=validated_data['registration_id'])

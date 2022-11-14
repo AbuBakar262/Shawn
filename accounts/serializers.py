@@ -124,24 +124,24 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                   'profile_pic', 'gender', 'phone', 'dob', 'bio', 'email_verified', 'phone_verified']
 
     def validate(self, attrs):
-        # username = attrs.get("username")
+        email = attrs.get("email")
         apple = attrs.get("apple")
         instagram = attrs.get("instagram")
         if not instagram and not apple:
             raise serializers.ValidationError({'error': _('instagram or apple one is required')})
-        # if not User.objects.filter(username=username).exists():
-        #     raise serializers.ValidationError({'username': _('username does not exists')})
+        if not User.objects.filter(email=email).exists():
+            raise serializers.ValidationError({'email': _('email does not exists')})
         if instagram:
             if not User.objects.filter(instagram=instagram).exists():
                 raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
             else:
-                user = User.objects.filter( instagram=instagram).first()
+                user = User.objects.filter(instagram=instagram, email=email).first()
                 return user
         else:
             if not User.objects.filter(apple=apple).exists():
                 raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
             else:
-                user = User.objects.filter(apple=apple).first()
+                user = User.objects.filter(apple=apple, email=email).first()
                 return user
 
 

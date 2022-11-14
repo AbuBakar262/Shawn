@@ -3,101 +3,49 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from sean_backend.utils import PermissionsUtil
 
 
 # Create your views here.
 
 class UserLocationViewSet(viewsets.ModelViewSet):
     queryset = UserLocation.objects.all()
+    serializer_class = UserLocationSerializer
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
+        user = request.user
+        serializer = self.get_serializer(data=request.data)
         try:
-            user = request.user
-            serializer = UserLocationSerializer(data=request.data, context={'request': request})
-            try:
-                serializer.is_valid(raise_exception=True)
-            except Exception as e:
-                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
-                         "errors": e.args[0]}
-                return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            serializer.save(user=user)
-            return Response({
-                'status': True,
-                'status_code': status.HTTP_200_OK,
-                'message': 'Location saved successfully',
-                'result': serializer.data
-            }, status=status.HTTP_200_OK)
+            serializer.is_valid(raise_exception=True)
         except Exception as e:
-            return Response({
-                'status': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(user=user)
+        response = {"statusCode": 201, "error": False, "message": "Location saved successfully!",
+                    "data": serializer.data}
+        return Response(response, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
-        try:
-            user = request.user
-            locations = UserLocation.objects.filter(user=user)
-            serializer = UserLocationListSerializer(locations, many=True)
-            try:
-                serializer.is_valid(raise_exception=True)
-            except Exception as e:
-                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
-                         "errors": e.args[0]}
-                return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            return Response({
-                'status': True,
-                'status_code': status.HTTP_200_OK,
-                'message': 'Locations fetched successfully',
-                'result': serializer.data
-            }, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({
-                'status': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        query = UserLocation.objects.filter(user=request.user).order_by('-id')
+        serializer = UserLocationListSerializer(query, many=True)
+        response = {"statusCode": 200, "error": False, "message": "User Saved Location List!",
+                    "data": serializer.data}
+        return Response(response, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request, *args, **kwargs):
-        try:
-            user = request.user
-            location = self.get_object()
-            if user != location.user:
-                return Response({
-                    'status': False,
-                    'status_code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'You are not allowed to view this location'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            serializer = UserLocationListSerializer(location)
-            return Response({
-                'status': True,
-                'status_code': status.HTTP_200_OK,
-                'message': 'Location fetched successfully',
-                'result': serializer.data
-            }, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({
-                'status': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        instance = self.get_object()
+        serializer = UserLocationListSerializer(instance)
+        response = {"statusCode": 200, "error": False, "message": "Get Location!", "data": serializer.data}
+        return Response(response, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
-        try:
-            user = request.user
-            location = self.get_object()
-            if user != location.user:
-                return Response({
-                    'status': False,
-                    'status_code': status.HTTP_400_BAD_REQUEST,
-                    'message': 'You are not allowed to delete this location'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            location.delete()
-            return Response({
-                'status': True,
-                'status_code': status.HTTP_200_OK,
-                'message': 'Location deleted successfully'
-            }, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({
-                'status': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        instance = self.get_object()
+        PermissionsUtil.permission(request, instance)
+        self.perform_destroy(instance)
+        response = {"statusCode": 200, "error": False, "message": "Location successfully deleted!", "data": ""}
+        return Response(response, status=status.HTTP_200_OK)
+
+    def perform_destroy(self, instance):
+        instance.delete()

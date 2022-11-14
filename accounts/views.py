@@ -30,12 +30,9 @@ class UserViewSet(viewsets.ModelViewSet):
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
-            return Response(data={
-                "status": "success",
-                "status_code": status.HTTP_201_CREATED,
-                "message": "User created successfully",
-                "result": serializer.data['user']
-            }, status=status.HTTP_201_CREATED)
+            response = {"statusCode": 201, "error": False, "message": "User created successfully!",
+                        "data": serializer.data}
+            return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(data={
                 "status": "error",
@@ -68,10 +65,10 @@ class UserViewSet(viewsets.ModelViewSet):
             profile = Profile.objects.get(user=serializer.data.get("user"))
             user_serializer = UserSerializer(user)
             return Response(data={
-                "status": "success",
-                "status_code": status.HTTP_201_CREATED,
+                "statusCode": 201,
+                "error": False,
                 "message": "User profile created successfully",
-                "result": {
+                "data": {
                     "id": profile.id,
                     "profile_pic": profile.profile_pic.url,
                     "gender": profile.gender,
@@ -116,20 +113,19 @@ class UserViewSet(viewsets.ModelViewSet):
                 user = User.objects.get(username=username)
             user_serializer = UserSerializer(user)
             data = user_serializer.data
-            data['account_type'] = "Email"
             if not user.create_profile:
                 return Response(data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
+                    "statusCode": 201,
+                    "error": False,
                     "message": "User logged in successfully",
-                    "result": data
+                    "data": data
                 }, status=status.HTTP_200_OK)
             return Response(
                 data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
+                    "statusCode": 201,
+                    "error": False,
                     "message": "User logged in successfully",
-                    "result": {
+                    "data": {
                         "user": data,
                         "access": str(AccessToken.for_user(user)),
                         "refresh": str(RefreshToken.for_user(user))
@@ -172,9 +168,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 send_otp_email(email)
                 user_serializer = UserSerializer(user)
             return Response(data={
-                "status": "success", "status_code": status.HTTP_200_OK,
+                "statusCode": 201, "error": False,
                 "message": "OTP sent to phone number successfully",
-                "result": {
+                "data": {
                     "user": user_serializer.data,
                 }
             }, status=status.HTTP_200_OK)
@@ -196,16 +192,14 @@ class UserViewSet(viewsets.ModelViewSet):
             phone_otp = verify_otp_phone(user.phone, otp)
             if phone_otp != 'approved':
                 return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "statusCode": 201, "error": False,
                     "message": "Invalid OTP"
                 }, status=status.HTTP_400_BAD_REQUEST)
             user_serializer = UserSerializer(user)
             return Response(data={
-                "status": "success",
-                "status_code": status.HTTP_200_OK,
+                "statusCode": 200, "error": False,
                 "message": "OTP verified successfully please reset your password!",
-                "result": {
+                "data": {
                     "user": user_serializer.data,
                 }
             }, status=status.HTTP_200_OK)
@@ -244,10 +238,9 @@ class UserViewSet(viewsets.ModelViewSet):
             user.save()
             user_serializer = UserSerializer(user)
             return Response(data={
-                "status": "success",
-                "status_code": status.HTTP_200_OK,
+                "statusCode": 200, "error": False,
                 "message": "Password changed successfully",
-                "result": {
+                "data": {
                     "user": user_serializer.data,
                 }
             }, status=status.HTTP_200_OK)
@@ -267,14 +260,22 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def profile(self, request, *args, **kwargs):
         try:
             user = request.user
-            user_serializer = UserSerializer(user)
+            if Profile.objects.filter(user=user).exists():
+                profile = Profile.objects.filter(user=user).first()
+                serializer_ = UserProfileSerializer(profile)
+                user_serializer = serializer_.data
+            else:
+                response = {"statusCode": 200, "error": False,
+                            "message": "User profile matching query does not exist!",
+                            "data": {
+                            }}
+                return Response(data=response, status=status.HTTP_200_OK)
             user_event_serializer = EventListSerializer(Event.objects.filter(user=user), many=True)
             user_location_serializer = UserLocationSerializer(UserLocation.objects.filter(user=user), many=True)
-            response = {"status": "success",
-                        "status_code": status.HTTP_200_OK,
+            response = {"statusCode": 200, "error": False,
                         "message": "User profile details",
-                        "result": {
-                            "user": user_serializer.data,
+                        "data": {
+                            "user": user_serializer,
                             "location": user_location_serializer.data,
                             "map": user_event_serializer.data,
                         }}
@@ -403,18 +404,16 @@ class SocialViewSet(viewsets.ModelViewSet):
                     "refresh": str(RefreshToken.for_user(serializer.instance)),
                 }
                 return Response(data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
+                    "statusCode": 201, "error": False,
                     "message": "User signup successfully",
-                    "responsePayload": result
-                }, status=status.HTTP_200_OK)
+                    "data": result
+                }, status=status.HTTP_201_CREATED)
             else:
                 return Response(data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
+                    "statusCode": 201, "error": False,
                     "message": "User signup successfully",
-                    "responsePayload": serializer.data
-                }, status=status.HTTP_200_OK)
+                    "data": serializer.data
+                }, status=status.HTTP_201_CREATED)
         except Exception as e:
             error = {"status": "error",
                      "status_code": status.HTTP_400_BAD_REQUEST,
@@ -436,24 +435,22 @@ class SocialViewSet(viewsets.ModelViewSet):
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             serializer_data = serializer.data
             if serializer_data.get("create_profile"):
-                user = Social.objects.filter(id=serializer_data.get("id")).first()
+                user = User.objects.filter(id=serializer_data.get("id")).first()
                 result = {
                     "user": serializer_data,
                     "access": str(AccessToken.for_user(user)),
                     "refresh": str(RefreshToken.for_user(user)),
                 }
                 return Response(data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
+                    "statusCode": 200, "error": False,
                     "message": "User Login successfully",
-                    "result": result
+                    "data": result
                 }, status=status.HTTP_200_OK)
             else:
                 return Response(data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
+                    "statusCode": 200, "error": False,
                     "message": "User Login successfully",
-                    "result": serializer_data
+                    "data": serializer_data
                 }, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"status": "error",
@@ -475,16 +472,15 @@ class SocialViewSet(viewsets.ModelViewSet):
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
-            social_user = Social.objects.get(id=serializer.data.get("social"))
+            social_user = User.objects.get(id=serializer.data.get("user"))
             social_user.create_profile = True
             social_user.save()
-            social_profile = Profile.objects.get(social=serializer.data.get("social"))
+            social_profile = Profile.objects.get(user=serializer.data.get("user"))
             social = SocialUserSerializer(social_user, many=False)
             return Response(data={
-                "status": "success",
-                "status_code": status.HTTP_201_CREATED,
+                "statusCode": 200, "error": False,
                 "message": "User profile created successfully",
-                "result": {
+                "data": {
                     "id": social_profile.id,
                     "profile_pic": social_profile.profile_pic.url,
                     "gender": social_profile.gender,

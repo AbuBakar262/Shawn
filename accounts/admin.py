@@ -5,5 +5,4 @@ from .models import *
 admin.site.register(User)
 admin.site.register(FireBaseNotification)
 admin.site.register(BlockUser)
-admin.site.register(Social)
 admin.site.register(Profile)

@@ -268,7 +268,7 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
             if not User.objects.filter(email=email).exists():
                 raise serializers.ValidationError({'error': _('Email does not exist')})
         if phone:
-            if not User.objects.filter(phone=phone).exists():
+            if not Profile.objects.filter(phone=phone).exists():
                 raise serializers.ValidationError({'error': _('Phone does not exist')})
         return attrs
 

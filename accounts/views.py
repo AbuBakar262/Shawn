@@ -160,7 +160,7 @@ class UserViewSet(viewsets.ModelViewSet):
             phone = request.data.get('phone')
             email = request.data.get('email')
             if phone:
-                user = User.objects.filter(phone=phone).first()
+                user = Profile.objects.filter(phone=phone).first()
                 send_otp_phone(user.phone)
                 user_serializer = UserSerializer(user)
             else:
@@ -168,7 +168,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 send_otp_email(email)
                 user_serializer = UserSerializer(user)
             return Response(data={
-                "statusCode": 201, "error": False,
+                "statusCode": 200, "error": False,
                 "message": "OTP sent to phone number successfully",
                 "data": {
                     "user": user_serializer.data,
@@ -189,11 +189,13 @@ class UserViewSet(viewsets.ModelViewSet):
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             otp = serializer.validated_data.get('otp')
             user = User.objects.get(id=request.data.get('user'))
-            phone_otp = verify_otp_phone(user.phone, otp)
+            phone = Profile.objects.get(user=user).phone
+            phone_otp = verify_otp_phone(phone, otp)
             if phone_otp != 'approved':
                 return Response(data={
-                    "statusCode": 201, "error": False,
-                    "message": "Invalid OTP"
+                    "statusCode": 400, "error": False,
+                    "message": "Invalid OTP",
+                    "data": {}
                 }, status=status.HTTP_400_BAD_REQUEST)
             user_serializer = UserSerializer(user)
             return Response(data={
@@ -239,7 +241,7 @@ class UserViewSet(viewsets.ModelViewSet):
             user_serializer = UserSerializer(user)
             return Response(data={
                 "statusCode": 200, "error": False,
-                "message": "Password changed successfully",
+                "message": "Reset Password Successfully",
                 "data": {
                     "user": user_serializer.data,
                 }

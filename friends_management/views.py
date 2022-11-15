@@ -1,4 +1,6 @@
+from django.db.models import Q
 from accounts.models import *
+from accounts.serializers import UserProfileSerializer
 from friends_management.serializers import *
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -33,7 +35,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             block_list = block_list + block_list1
             contact_list = User.objects.exclude(id__in=friend_list).exclude(id__in=reject_list).exclude(
                 id=user.id).exclude(is_superuser=True).exclude(id__in=block_list)
-            serializer = ContactListSerializer(contact_list, many=True)
+            serializer = UserProfileSerializer(contact_list, many=True)
             return Response({
                 "status": True,
                 "status_code": status.HTTP_200_OK,
@@ -43,6 +45,24 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({
                 "status": False,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def all_user_list(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            user_block_to = BlockUser.objects.filter(user=user).values_list("block_user", flat=True)
+            user_block_by = BlockUser.objects.filter(block_user=user).values_list("user", flat=True)
+            all_user = User.objects.exclude(id=user.id).exclude(is_superuser=True). \
+                exclude(id__in=user_block_to).exclude(id__in=user_block_by)
+            serializer = FriendSerializer(all_user, many=True)
+            return Response({
+                "statusCode": 200, "error": False, "message": "All User List",
+                "data": serializer.data, "total": all_user.count()
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "statusCode": 400, "error": True,
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -153,7 +173,8 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "message": "Friend request accepted"
                 }, status=status.HTTP_200_OK)
             elif serializer.validated_data['status'] == 'rejected':
-                RejectRequest.objects.create(user=friend_request.user, rejected_user=friend_request.receiver_friend_request)
+                RejectRequest.objects.create(user=friend_request.user,
+                                             rejected_user=friend_request.receiver_friend_request)
                 friend_request.delete()
                 return Response(data={
                     "status": "success",
@@ -205,40 +226,22 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
 
     def friend_list(self, request, *args, **kwargs):
         try:
-            friend_list = []
             user = request.user
-            if Friend.objects.filter(user=user):
-                friends = Friend.objects.filter(user=user)
-                for friend in friends:
-                    friend_list.append(friend.friend)
-                serializer = UserSerializer(friend_list, many=True)
-                return Response(data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
-                    "message": "Friend List fetched successfully",
-                    "result": serializer.data
-                }, status=status.HTTP_200_OK)
-            if Friend.objects.filter(friend=user):
-                friends = Friend.objects.filter(friend=user)
-                for friend in friends:
-                    friend_list.append(friend.user)
-                serializer = UserSerializer(friend_list, many=True)
-                return Response(data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
-                    "message": "Friend List fetched successfully",
-                    "result": serializer.data
-                }, status=status.HTTP_200_OK)
-            if not Friend.objects.filter(user=user) and not Friend.objects.filter(friend=user):
-                return Response(data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
-                    "message": "No friend found",
-                }, status=status.HTTP_200_OK)
+            user_friend = Friend.objects.filter(user=user).values_list("friend", flat=True)
+            friend_user = Friend.objects.filter(friend=user).values_list("user", flat=True)
+            total = user_friend.count() + friend_user.count()
+            users = User.objects.filter(Q(id__in=user_friend) | Q(id__in=friend_user))
+            serializer = FriendSerializer(users, many=True)
+            return Response(data={
+                "statusCode": 200, "error": False,
+                "message": "Friend List fetched successfully",
+                "data": serializer.data,
+                "total": total
+            }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={
-                "status": "error",
-                "status_code": status.HTTP_400_BAD_REQUEST,
+                "error": True,
+                "statusCode": 400,
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 

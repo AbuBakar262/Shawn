@@ -138,7 +138,13 @@ class UserViewSet(viewsets.ModelViewSet):
             email = request.data.get('email')
             if phone:
                 user = User.objects.filter(phone=phone).first()
-                send_otp_phone(user.phone)
+                otp = send_otp_phone(user.phone)
+                if otp != 'approved':
+                    return Response(data={
+                        "statusCode": 400, "error": False,
+                        "message": otp,
+                        "data": {}
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 user_serializer = UserSerializer(user)
                 return Response(data={
                     "statusCode": 200, "error": False,
@@ -149,7 +155,13 @@ class UserViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_200_OK)
             else:
                 user = User.objects.filter(email=email).first()
-                send_otp_email(user.email)
+                otp = send_otp_email(user.email)
+                if otp != 'approved':
+                    return Response(data={
+                        "statusCode": 400, "error": False,
+                        "message": otp,
+                        "data": {}
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 user_serializer = UserSerializer(user)
                 return Response(data={
                     "statusCode": 200, "error": False,
@@ -177,7 +189,7 @@ class UserViewSet(viewsets.ModelViewSet):
             if phone_otp != 'approved':
                 return Response(data={
                     "statusCode": 400, "error": False,
-                    "message": "Invalid OTP",
+                    "message": phone_otp,
                     "data": {}
                 }, status=status.HTTP_400_BAD_REQUEST)
             user_serializer = UserSerializer(user)
@@ -319,24 +331,23 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def profile_status(self, request, *args, **kwargs):
         try:
+            serializer = UserProfileStatusSerializer(data=request.data)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
             user = request.user
-            if not user:
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "User does not exist"
-                }, status=status.HTTP_400_BAD_REQUEST)
-            user.is_account = request.data.get('is_account')
+            user.is_account = serializer.validated_data.get('is_account')
             user.save()
             user_serializer = UserSerializer(user)
-            response = {"status": "success",
-                        "status_code": status.HTTP_200_OK,
-                        "message": "User profile status changed successfully",
-                        "responsePayload": user_serializer.data}
+            response = {"statusCode": 200, "error": False,
+                        "message": "User profile status updated successfully",
+                        "data": user_serializer.data}
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
+            error = {"statusCode": 400, "error": True,
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
@@ -355,8 +366,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
     def get_permissions(self):
-        if self.action in ['edit_profile'] or self.action in ['delete_profile'] or self.action in [
-            'profile_status'] or self.action in ['profile']:
+        if self.action in ['edit_profile'] or self.action in ['delete_profile'] or self.action in \
+                ['profile_status'] or self.action in ['profile']:
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [AllowAny]

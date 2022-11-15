@@ -22,6 +22,11 @@ GENDER_CHOICES = (
     ('Female', 'Female')
 )
 
+ACCOUNT_CHOICE = (
+    ('Public', 'Public'),
+    ('Private', 'Private')
+)
+
 
 class SignupSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
@@ -51,7 +56,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         username = validated_data['username']
-        email = validated_data['email']
+        email = validated_data['email'].lower()
         password = validated_data['password']
         with transaction.atomic():
             user = User.objects.create(username=username, email=email, password=make_password(password),
@@ -77,7 +82,7 @@ class SocialSignupSerializer(serializers.ModelSerializer):
         username = attrs.get("username")
         instagram = attrs.get("instagram")
         apple = attrs.get("apple")
-        email = attrs.get("email")
+        email = attrs.get("email").lower()
         if not instagram and not apple:
             raise serializers.ValidationError({'error': _('instagram or apple one is required')})
         if instagram:
@@ -96,7 +101,7 @@ class SocialSignupSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         username = validated_data['username']
-        email = validated_data['email']
+        email = validated_data['email'].lower()
         with transaction.atomic():
             if "instagram" in validated_data:
                 instagram = validated_data['instagram']
@@ -145,9 +150,15 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                 return user
 
 
+def image_validator(file):
+    max_file_size = 1024 * 1024 * 5  # 5MB
+    if file.size > max_file_size:
+        raise serializers.ValidationError(_('Max file size is 5MB'))
+
+
 class CreateUserProfileSerializer(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True)
-    profile_pic = serializers.FileField(required=True)
+    profile_pic = serializers.FileField(validators=[image_validator], required=True)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     phone = serializers.CharField(required=True)
     dob = serializers.DateField(required=True)
@@ -315,3 +326,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'create_profile','instagram', 'apple', 'is_account', 'profile_pic',
                   'gender', 'phone', 'dob', 'bio', 'email_verified', 'phone_verified', 'account_type']
+
+
+class UserProfileStatusSerializer(serializers.ModelSerializer):
+    is_account = serializers.ChoiceField(choices=ACCOUNT_CHOICE, required=True)
+
+    class Meta:
+        model = User
+        fields = ['is_account']

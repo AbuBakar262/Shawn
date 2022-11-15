@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import serializers
 from accounts.serializers import UserSerializer
 from friends_management.models import *
@@ -7,13 +8,6 @@ FRIEND_REQUEST_STATUS = (
     ('accepted', 'Accepted'),
     ('rejected', 'Rejected')
 )
-
-
-class ContactListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'profile_pic', 'email', 'gender', 'phone', 'instagram', 'dob', 'bio',
-                  'create_profile', 'is_account']
 
 
 class FriendRequestListSerializer(serializers.ModelSerializer):
@@ -45,3 +39,18 @@ class FriendRequestActionSerializer(serializers.ModelSerializer):
         if not friend_request_id.status == 'pending':
             raise serializers.ValidationError(_("Friend request is already {}").format(friend_request_id.status))
         return attrs
+
+
+class FriendSerializer(serializers.ModelSerializer):
+    is_friend = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'apple', 'instagram', 'account_type', 'create_profile', 'is_account',
+                  'profile_pic', 'gender', 'phone', 'dob', 'bio', 'email_verified', 'phone_verified', 'is_friend']
+
+    def get_is_friend(self, obj):
+        if Friend.objects.filter(Q(user=obj) | Q(friend=obj)).exists():
+            return True
+        else:
+            return False

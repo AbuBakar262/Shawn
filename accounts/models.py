@@ -28,7 +28,7 @@ class User(AbstractUser):
     instagram = models.CharField(max_length=250, null=True, blank=True)
     apple = models.CharField(max_length=250, null=True, blank=True)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE, default='')
-    profile_pic = models.FileField(upload_to='media/profile_photos', null=True, blank=True)
+    profile_pic = models.FileField(upload_to='profile_photos', null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     dob = models.DateField(_('date of birth'), null=True, blank=True)
@@ -41,12 +41,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-
-
-class FireBaseNotification(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='firebase_notification', null=True,
-                             blank=True)
-    registration_id = models.TextField(null=True, blank=True)
 
 
 class BlockUser(models.Model):

@@ -1,7 +1,13 @@
 import random
 import string
+from django.utils.translation import gettext_lazy as _
+import boto3
 from twilio.rest import Client
-from sean_backend.settings import ACCOUNT_SID_TWILIO, AUTH_TOKEN_TWILIO
+from rest_framework import serializers
+from accounts.models import User
+from notification.models import DeviceRegistration
+from sean_backend.settings import ACCOUNT_SID_TWILIO, AUTH_TOKEN_TWILIO, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, \
+    AWS_STORAGE_BUCKET_NAME
 
 
 def random_string_generator():
@@ -56,3 +62,44 @@ def verify_otp_email(to, code):
             return e
     except Exception as e:
         return e.msg
+
+
+def delete_image(profile):
+    client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
+                          aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    bucket = AWS_STORAGE_BUCKET_NAME
+    key = profile.name
+    if profile:
+        client.delete_object(Bucket=bucket, Key=key)
+        return True
+    else:
+        return False
+
+
+# When user Login device_id will be saved in DeviceRegistration table
+def social_login(email, apple, instagram, device_id):
+    if not instagram and not apple:
+        raise serializers.ValidationError({'error': _('instagram or apple one is required')})
+    if not User.objects.filter(email=email).exists():
+        raise serializers.ValidationError({'email': _('email does not exists')})
+    if instagram:
+        if not User.objects.filter(instagram=instagram).exists():
+            raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
+        else:
+            user = User.objects.filter(instagram=instagram, email=email).first()
+            if not DeviceRegistration.objects.filter(user=user).exists():
+                DeviceRegistration.objects.create(user=user, registration_id=device_id)
+            if not DeviceRegistration.objects.filter(user=user, registration_id=device_id).exists():
+                DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
+            return user
+
+    else:
+        if not User.objects.filter(apple=apple).exists():
+            raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
+        else:
+            user = User.objects.filter(apple=apple, email=email).first()
+            if not DeviceRegistration.objects.filter(user=user).exists():
+                DeviceRegistration.objects.create(user=user, registration_id=device_id)
+            if not DeviceRegistration.objects.filter(user=user, registration_id=device_id).exists():
+                DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
+            return user

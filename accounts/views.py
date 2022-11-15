@@ -11,8 +11,6 @@ from accounts.utils import *
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from sean_backend.utils import PermissionsUtil
-
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -252,7 +250,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
-    # permission_classes = [IsAuthenticated]
+    # permission_classes = [AllowAny]
 
     def profile(self, request, *args, **kwargs):
         try:
@@ -283,36 +281,30 @@ class ProfileViewSet(viewsets.ModelViewSet):
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description="Profile Edit",
-        request_body=UserProfileUpdateSerializer,
-        responses={
-            200: openapi.Response('Profile updated successfully', UserSerializer),
-            400: openapi.Response('Bad request', UserSerializer),
-        }
-    )
-    def edit_profile(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = request.user
+        serializer = UserProfileUpdateSerializer(instance, data=request.data, partial=partial, context={'request': request})
         try:
-            user = request.user
-            serializer = UserProfileUpdateSerializer(user, data=request.data)
-            try:
-                serializer.is_valid(raise_exception=True)
-            except Exception as e:
-                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
-                         "errors": e.args[0]}
-                return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            serializer.save()
-            user_serializer = UserSerializer(user)
-            response = {"status": "success",
-                        "status_code": status.HTTP_200_OK,
-                        "message": "User profile updated successfully",
-                        "responsePayload": user_serializer.data}
-            return Response(data=response, status=status.HTTP_200_OK)
+            serializer.is_valid(raise_exception=True)
         except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+        response = {"statusCode": 200, "error": False, "message": "Profile Updated Successfully!",
+                    "data": serializer.data}
+        return Response(data=response, status=status.HTTP_200_OK)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
     def profile_list(self, request, *args, **kwargs):
         try:

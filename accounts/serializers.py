@@ -194,8 +194,8 @@ class SocialProfileSerializer(serializers.ModelSerializer):
 
 
 class SigninSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(required=False)
-    username = serializers.CharField(required=False)
+    email = serializers.CharField(required=True)
+    # username = serializers.CharField(required=False)
     password = serializers.CharField(
         max_length=128,
         label='Password',
@@ -213,31 +213,21 @@ class SigninSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         email = attrs.get('email')
         password = attrs.get('password')
-        username = attrs.get('username')
         device_id = attrs.get('device_id')
-        if email is None and username is None:
-            raise serializers.ValidationError({'error': _('Email or username is required, Please enter one of them')})
-        if username:
-            if not User.objects.filter(username=username).exists():
-                raise serializers.ValidationError({'username': _('username does not exists')})
-            else:
-                user_email = User.objects.filter(username=username).first().email
-                user = authenticate(email=user_email.lower(), password=password)
-                if not user:
-                    raise serializers.ValidationError({'error': _('Invalid credentials')})
-
-        if email and password:
-            if not User.objects.filter(email=email.lower()).exists():
-                raise serializers.ValidationError({'email': _('email does not exists')})
+        if User.objects.filter(username=email).exists():
+            user_email = User.objects.filter(username=email).first().email
+            user = authenticate(email=user_email.lower(), password=password)
+        else:
             user = authenticate(email=email.lower(), password=password)
-            if not user:
-                raise serializers.ValidationError({'error': _('Invalid credentials')})
-
-            if not DeviceRegistration.objects.filter(user=user).exists():
-                DeviceRegistration.objects.create(user=user, registration_id=device_id)
-
-            if not DeviceRegistration.objects.filter(user=user, registration_id=device_id).exists():
-                DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
+        if not user:
+            raise serializers.ValidationError({'error': _('Invalid credentials')})
+        if not user.is_active:
+            raise serializers.ValidationError({'error': _('Account Disabled, contact admin')})
+        device = DeviceRegistration.objects.filter(user=user)
+        if not device.exists():
+            DeviceRegistration.objects.create(user=user, registration_id=device_id)
+        if not device.filter(registration_id=device_id).exists():
+            DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
         return user
 
 

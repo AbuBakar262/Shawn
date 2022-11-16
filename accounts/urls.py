@@ -18,10 +18,7 @@ urlpatterns = [
 
     # User Profile
     path("api/profile", ProfileViewSet.as_view({"get": "profile"}), name="profile"),
-    # path("api/edit_profile", ProfileViewSet.as_view({"put": "edit_profile"}), name="edit_profile"),
-    path("api/profile_list", ProfileViewSet.as_view({"get": "profile_list"}), name="profile_list"),
     path("api/profile_status", ProfileViewSet.as_view({"post": "profile_status"}), name="profile_status"),
-    path("api/delete_profile", ProfileViewSet.as_view({"delete": "delete_profile"}), name="delete_profile"),
 
     # Social Login
     path("api/social_signup", SocialViewSet.as_view({"post": "social_signup"}), name="social_signup"),

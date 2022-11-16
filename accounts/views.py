@@ -11,6 +11,8 @@ from accounts.utils import *
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
+from sean_backend.utils import PermissionsUtil
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -67,7 +69,6 @@ class UserViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
-
 
     @swagger_auto_schema(
         operation_description="Signin",
@@ -284,7 +285,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = request.user
-        serializer = UserProfileUpdateSerializer(instance, data=request.data, partial=partial, context={'request': request})
+        serializer = UserProfileUpdateSerializer(instance, data=request.data, partial=partial,
+                                                 context={'request': request})
         try:
             serializer.is_valid(raise_exception=True)
         except Exception as e:
@@ -306,20 +308,16 @@ class ProfileViewSet(viewsets.ModelViewSet):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
-    def profile_list(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs):
         try:
             user = User.objects.exclude(is_superuser=True)
             user_serializer = UserSerializer(user, many=True)
-            response = {"status": "success",
-                        "status_code": status.HTTP_200_OK,
-                        "message": "User profile list",
-                        "responsePayload": user_serializer.data}
+            response = {"statusCode": 200, "error": False, "message": "User List", "data": user_serializer.data}
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": str(e)}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def profile_status(self, request, *args, **kwargs):
         try:
@@ -343,22 +341,20 @@ class ProfileViewSet(viewsets.ModelViewSet):
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete_profile(self, request, *args, **kwargs):
-        try:
-            user = request.user
-            user.delete()
-            response = {"status": "success",
-                        "status_code": status.HTTP_200_OK,
-                        "message": "User profile deleted successfully"}
-            return Response(data=response, status=status.HTTP_200_OK)
-        except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        PermissionsUtil.destroy_permission(request, instance)
+        profile = User.objects.filter(id=instance.id).first().profile_pic
+        delete_image(profile)
+        self.perform_destroy(instance)
+        response = {"statusCode": 200, "error": False, "message": "User profile deleted successfully!"}
+        return Response(data=response, status=status.HTTP_200_OK)
+
+    def perform_destroy(self, instance):
+        instance.delete()
 
     def get_permissions(self):
-        if self.action in ['edit_profile'] or self.action in ['delete_profile'] or self.action in \
+        if self.action in ['edit_profile'] or self.action in \
                 ['profile_status'] or self.action in ['profile']:
             permission_classes = [IsAuthenticated]
         else:
@@ -445,8 +441,6 @@ class SocialViewSet(viewsets.ModelViewSet):
                      "status_code": status.HTTP_400_BAD_REQUEST,
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
 class BlockUserViewSet(viewsets.ModelViewSet):

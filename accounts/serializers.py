@@ -36,7 +36,7 @@ class SignupSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(max_length=128, label='Password', style={'input_type': 'password'},
                                      write_only=True)
-    device_id = serializers.CharField(required=True, write_only=True)
+    device_id = serializers.CharField(required=True, write_only=True, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User
@@ -76,7 +76,7 @@ class SocialSignupSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     instagram = serializers.CharField(required=False)
     apple = serializers.CharField(required=False)
-    device_id = serializers.CharField(required=True, write_only=True)
+    device_id = serializers.CharField(required=True, write_only=True, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User
@@ -128,7 +128,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
     instagram = serializers.CharField(required=False)
     apple = serializers.CharField(required=False)
     email = serializers.CharField(required=True)
-    device_id = serializers.CharField(required=True, write_only=True)
+    device_id = serializers.CharField(required=True, write_only=True, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User
@@ -203,7 +203,7 @@ class SigninSerializer(serializers.ModelSerializer):
         write_only=True,
         required=True
     )
-    device_id = serializers.CharField(required=True, write_only=True)
+    device_id = serializers.CharField(required=True, write_only=True, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User

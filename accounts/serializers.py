@@ -49,7 +49,7 @@ class SignupSerializer(serializers.ModelSerializer):
         return data
 
     def validate(self, data):
-        if User.objects.filter(email=data['email']).exists():
+        if User.objects.filter(email=data['email'].lower()).exists():
             raise serializers.ValidationError({'email': _('Email already exists')})
         if User.objects.filter(username=data['username']).exists():
             raise serializers.ValidationError({'username': _('Username already exists')})
@@ -59,11 +59,11 @@ class SignupSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         username = validated_data['username']
-        email = validated_data['email'].lower()
+        email = validated_data['email']
         password = validated_data['password']
         device_id = validated_data['device_id']
         with transaction.atomic():
-            user = User.objects.create(username=username, email=email, password=make_password(password),
+            user = User.objects.create(username=username, email=email.lower(), password=make_password(password),
                                        account_type="Email")
             user.save()
             if not DeviceRegistration.objects.filter(user=user).exists():
@@ -87,7 +87,7 @@ class SocialSignupSerializer(serializers.ModelSerializer):
         username = attrs.get("username")
         instagram = attrs.get("instagram")
         apple = attrs.get("apple")
-        email = attrs.get("email").lower()
+        email = attrs.get("email")
         if not instagram and not apple:
             raise serializers.ValidationError({'error': _('instagram or apple one is required')})
         if instagram:
@@ -98,7 +98,7 @@ class SocialSignupSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'apple': _('apple already exists')})
         if User.objects.filter(username=username).exists():
             raise serializers.ValidationError({'username': _('username already exists')})
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email=email.lower()).exists():
             raise serializers.ValidationError({'email': _('email already exists')})
         if len(username) > 15:
             raise serializers.ValidationError({'username': _('Username must be less than 15 characters')})
@@ -106,16 +106,16 @@ class SocialSignupSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         username = validated_data['username']
-        email = validated_data['email'].lower()
+        email = validated_data['email']
         device_id = validated_data['device_id']
         with transaction.atomic():
             if "instagram" in validated_data:
                 instagram = validated_data['instagram']
-                user = User.objects.create(username=username, instagram=instagram, email=email, account_type="Instagram")
+                user = User.objects.create(username=username, instagram=instagram, email=email.lower(), account_type="Instagram")
                 user.save()
             if "apple" in validated_data:
                 apple = validated_data['apple']
-                user = User.objects.create(username=username, apple=apple, email=email, account_type="Apple")
+                user = User.objects.create(username=username, apple=apple, email=email.lower(), account_type="Apple")
                 user.save()
             if not DeviceRegistration.objects.filter(user=user).exists():
                 DeviceRegistration.objects.create(user=user, registration_id=device_id)
@@ -141,7 +141,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
         instagram = attrs.get("instagram")
         device_id = attrs.get('device_id')
         # When user Login, device_id will be saved in DeviceRegistration table
-        data = social_login(email=email, apple=apple, instagram=instagram, device_id=device_id)
+        data = social_login(email=email.lower(), apple=apple, instagram=instagram, device_id=device_id)
         return data
 
 
@@ -220,14 +220,14 @@ class SigninSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'username': _('username does not exists')})
             else:
                 user_email = User.objects.filter(username=username).first().email
-                user = authenticate(email=user_email, password=password)
+                user = authenticate(email=user_email.lower(), password=password)
                 if not user:
                     raise serializers.ValidationError({'error': _('Invalid credentials')})
 
         if email and password:
-            if not User.objects.filter(email=email).exists():
+            if not User.objects.filter(email=email.lower()).exists():
                 raise serializers.ValidationError({'email': _('email does not exists')})
-            user = authenticate(email=email, password=password)
+            user = authenticate(email=email.lower(), password=password)
             if not user:
                 raise serializers.ValidationError({'error': _('Invalid credentials')})
 
@@ -253,7 +253,7 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
         if email is None and phone is None:
             raise serializers.ValidationError({'error': _('Email or Phone is required, Please enter one of them')})
         if email:
-            if not User.objects.filter(email=email).exists():
+            if not User.objects.filter(email=email.lower()).exists():
                 raise serializers.ValidationError({'error': _('Email does not exist')})
         if phone:
             if not User.objects.filter(phone=phone).exists():

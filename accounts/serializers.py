@@ -215,6 +215,8 @@ class SigninSerializer(serializers.ModelSerializer):
         password = attrs.get('password')
         username = attrs.get('username')
         device_id = attrs.get('device_id')
+        if email is None and username is None:
+            raise serializers.ValidationError({'error': _('Email or username is required, Please enter one of them')})
         if username:
             if not User.objects.filter(username=username).exists():
                 raise serializers.ValidationError({'username': _('username does not exists')})

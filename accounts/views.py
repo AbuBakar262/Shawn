@@ -60,7 +60,10 @@ class UserViewSet(viewsets.ModelViewSet):
             # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
         response = {"statusCode": 200, "error": False, "message": "Profile Created Successfully!",
-                    "data": serializer.data}
+                    "data": {
+                        "user": serializer.data,
+                        "access": str(AccessToken.for_user(instance)),
+                        "refresh": str(RefreshToken.for_user(instance))}}
         return Response(response, status=status.HTTP_200_OK)
 
     def perform_update(self, serializer):

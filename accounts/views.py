@@ -141,7 +141,7 @@ class UserViewSet(viewsets.ModelViewSet):
             if phone:
                 user = User.objects.filter(phone=phone).first()
                 otp = send_otp_phone(user.phone)
-                if otp != 'approved':
+                if otp != 'sent':
                     return Response(data={
                         "statusCode": 400, "error": False,
                         "message": otp,
@@ -158,7 +158,7 @@ class UserViewSet(viewsets.ModelViewSet):
             else:
                 user = User.objects.filter(email=email).first()
                 otp = send_otp_email(user.email)
-                if otp != 'approved':
+                if otp != 'sent':
                     return Response(data={
                         "statusCode": 400, "error": False,
                         "message": otp,
@@ -256,7 +256,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     # permission_classes = [AllowAny]
 
-    def profile(self, request, *args, **kwargs):
+    def user_profile(self, request, *args, **kwargs):
         try:
             user = request.user
             if User.objects.filter(id=user.id).exists():

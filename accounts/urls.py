@@ -17,7 +17,7 @@ urlpatterns = [
          name="reset_password"),
 
     # User Profile
-    path("api/profile", ProfileViewSet.as_view({"get": "profile"}), name="profile"),
+    path("api/user_profile", ProfileViewSet.as_view({"get": "user_profile"}), name="user_profile"),
     path("api/profile_status", ProfileViewSet.as_view({"post": "profile_status"}), name="profile_status"),
 
     # Social Login

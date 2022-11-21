@@ -310,9 +310,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         try:
-            user = User.objects.exclude(is_superuser=True)
+            user = request.user
+            user = User.objects.exclude(is_superuser=True).exclude(id=user.id).exclude(create_profile=False)
             user_serializer = UserSerializer(user, many=True)
-            response = {"statusCode": 200, "error": False, "message": "User List", "data": user_serializer.data}
+            response = {"statusCode": 200, "error": False, "message": "User List", "data": user_serializer.data, "count": user.count()}
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
@@ -355,7 +356,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['edit_profile'] or self.action in \
-                ['profile_status'] or self.action in ['profile']:
+                ['profile_status'] or self.action in ['profile'] or self.action in ['list']:
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [AllowAny]

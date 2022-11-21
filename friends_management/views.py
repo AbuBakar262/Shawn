@@ -34,13 +34,14 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 block_list1 = []
             block_list = block_list + block_list1
             contact_list = User.objects.exclude(id__in=friend_list).exclude(id__in=reject_list).exclude(
-                id=user.id).exclude(is_superuser=True).exclude(id__in=block_list)
+                id=user.id).exclude(is_superuser=True).exclude(id__in=block_list).exclude(create_profile=False)
             serializer = UserProfileSerializer(contact_list, many=True)
             return Response({
                 "status": True,
                 "status_code": status.HTTP_200_OK,
                 "message": "Contact List",
-                "result": serializer.data
+                "result": serializer.data,
+                "total": contact_list.count()
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({
@@ -54,7 +55,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             user_block_to = BlockUser.objects.filter(user=user).values_list("block_user", flat=True)
             user_block_by = BlockUser.objects.filter(block_user=user).values_list("user", flat=True)
             all_user = User.objects.exclude(id=user.id).exclude(is_superuser=True). \
-                exclude(id__in=user_block_to).exclude(id__in=user_block_by)
+                exclude(id__in=user_block_to).exclude(id__in=user_block_by).exclude(create_profile=False)
             serializer = FriendSerializer(all_user, many=True)
             return Response({
                 "statusCode": 200, "error": False, "message": "All User List",
@@ -101,7 +102,11 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 return Response(data={
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
-                    "message": "Friend request accepted"
+                    "message": "Friend request accepted",
+                    "data": {
+                        "user": UserSerializer(user).data,
+                        "friend": UserSerializer(friend).data
+                    }
                 }, status=status.HTTP_200_OK)
             friend_request = FriendRequest.objects.create(user=user, receiver_friend_request=friend)
             return Response(
@@ -109,8 +114,10 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request sent successfully",
-                    # return FriendRequest object
-                    "result": FriendRequestListSerializer(friend_request).data
+                    "data": {
+                        "user": UserSerializer(friend_request.user).data,
+                        "friend": UserSerializer(friend_request.receiver_friend_request).data
+                    }
                 },
                 status=status.HTTP_200_OK
             )

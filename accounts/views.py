@@ -270,7 +270,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             }}
                 return Response(data=response, status=status.HTTP_200_OK)
             user_event_serializer = EventListSerializer(Event.objects.filter(user=user), many=True)
-            user_location_serializer = UserLocationSerializer(UserLocation.objects.filter(user=user), many=True)
+            user_location_serializer = UserLocationSerializer(FavouriteLocation.objects.filter(user=user), many=True)
             response = {"statusCode": 200, "error": False,
                         "message": "User profile details",
                         "data": {

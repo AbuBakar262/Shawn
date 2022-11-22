@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'location',
     'event',
     'notification',
-    'admin_management'
+    'admin_management',
+    'subscriptions'
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

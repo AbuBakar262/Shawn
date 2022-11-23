@@ -28,6 +28,7 @@ class User(AbstractUser):
     social_id = models.CharField(max_length=250, null=True, blank=True)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE, default='')
     profile_pic = models.FileField(upload_to='profile_photos', null=True, blank=True)
+    profile_thumbnail = models.FileField(upload_to='profile_thumbnails', null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     dob = models.DateField(_('date of birth'), null=True, blank=True)

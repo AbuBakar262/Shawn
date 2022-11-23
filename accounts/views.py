@@ -358,7 +358,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         PermissionsUtil.destroy_permission(request, instance)
         profile = User.objects.filter(id=instance.id).first().profile_pic
-        delete_image(profile)
+        profile_thumb = User.objects.filter(id=instance.id).first().profile_thumbnail
+        delete_image(profile, profile_thumb)
         self.perform_destroy(instance)
         response = {"statusCode": 200, "error": False, "message": "User profile deleted successfully!"}
         return Response(data=response, status=status.HTTP_200_OK)

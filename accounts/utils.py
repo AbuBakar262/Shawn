@@ -64,13 +64,16 @@ def verify_otp_email(to, code):
         return e.msg
 
 
-def delete_image(profile):
+def delete_image(profile, profile_thumb):
     client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
                           aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     bucket = AWS_STORAGE_BUCKET_NAME
     key = profile.name
+    key_thumb = profile_thumb.name
     if profile:
         client.delete_object(Bucket=bucket, Key=key)
+    if profile_thumb:
+        client.delete_object(Bucket=bucket, Key=key_thumb)
         return True
     else:
         return False

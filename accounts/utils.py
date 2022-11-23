@@ -77,29 +77,17 @@ def delete_image(profile):
 
 
 # When user Login device_id will be saved in DeviceRegistration table
-def social_login(email, apple, instagram, device_id):
-    if not instagram and not apple:
-        raise serializers.ValidationError({'error': _('instagram or apple one is required')})
+def social_login(email, social_id, device_id):
+
     if not User.objects.filter(email=email).exists():
         raise serializers.ValidationError({'email': _('email does not exists')})
-    if instagram:
-        if not User.objects.filter(instagram=instagram).exists():
-            raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
-        else:
-            user = User.objects.filter(instagram=instagram, email=email).first()
-            if not DeviceRegistration.objects.filter(user=user).exists():
-                DeviceRegistration.objects.create(user=user, registration_id=device_id)
-            if not DeviceRegistration.objects.filter(user=user, registration_id=device_id).exists():
-                DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
-            return user
 
+    if User.objects.filter(social_id=social_id, email=email).exists():
+        user = User.objects.filter(social_id=social_id, email=email).first()
+        if not DeviceRegistration.objects.filter(user=user).exists():
+            DeviceRegistration.objects.create(user=user, registration_id=device_id)
+        if not DeviceRegistration.objects.filter(user=user, registration_id=device_id).exists():
+            DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
+        return user
     else:
-        if not User.objects.filter(apple=apple).exists():
-            raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
-        else:
-            user = User.objects.filter(apple=apple, email=email).first()
-            if not DeviceRegistration.objects.filter(user=user).exists():
-                DeviceRegistration.objects.create(user=user, registration_id=device_id)
-            if not DeviceRegistration.objects.filter(user=user, registration_id=device_id).exists():
-                DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
-            return user
+        raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})

@@ -21,7 +21,6 @@ urlpatterns = [
     path("api/profile_status", ProfileViewSet.as_view({"post": "profile_status"}), name="profile_status"),
 
     # Social Login
-    path("api/social_signup", SocialViewSet.as_view({"post": "social_signup"}), name="social_signup"),
     path("api/social_login", SocialViewSet.as_view({"post": "social_login"}), name="social_login"),
 
     # Block User

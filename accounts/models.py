@@ -25,8 +25,7 @@ class User(AbstractUser):
     password = models.CharField(_('password'), max_length=128, null=True, blank=True)
     create_profile = models.BooleanField(default=False)
     is_account = models.CharField(max_length=10, choices=ACCOUNT_CHOICE, default='Public')
-    instagram = models.CharField(max_length=250, null=True, blank=True)
-    apple = models.CharField(max_length=250, null=True, blank=True)
+    social_id = models.CharField(max_length=250, null=True, blank=True)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE, default='')
     profile_pic = models.FileField(upload_to='profile_photos', null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
@@ -54,3 +53,4 @@ class BlockUser(models.Model):
 
     def __str__(self):
         return f'{self.user.email} blocked {self.block_user.email}'
+

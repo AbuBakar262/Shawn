@@ -96,7 +96,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
         device_id = validated_data['device_id']
         account_type = validated_data['account_type']
         with transaction.atomic():
-            if User.objects.filter(social_id=social_id, account_type=account_type, email=email.lower()).exists():
+            if User.objects.filter(social_id=social_id, username=username, email=email.lower()).exists():
                 data = social_login(email=email.lower(), social_id=social_id, device_id=device_id)
                 return data
             else:

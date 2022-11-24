@@ -196,7 +196,7 @@ class UserViewSet(viewsets.ModelViewSet):
                         "message": phone_otp,
                         "data": {}
                     }, status=status.HTTP_400_BAD_REQUEST)
-            if otp_type == 'Email':
+            else:
                 email_otp = verify_otp_email(user.email, otp)
                 if email_otp != 'approved':
                     return Response(data={

@@ -228,8 +228,8 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
 
 
 OTP_TYPE_CHOICES = (
-    ('email', 'email'),
-    ('phone', 'phone'),
+    ('Email', 'Email'),
+    ('Phone', 'Phone'),
 )
 
 

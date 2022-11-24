@@ -188,7 +188,7 @@ class UserViewSet(viewsets.ModelViewSet):
             otp = serializer.validated_data.get('otp')
             user = User.objects.get(id=request.data.get('user'))
             otp_type = request.data.get('otp_type')
-            if otp_type == 'phone':
+            if otp_type == 'Phone':
                 phone_otp = verify_otp_phone(user.phone, otp)
                 if phone_otp != 'approved':
                     return Response(data={
@@ -196,7 +196,7 @@ class UserViewSet(viewsets.ModelViewSet):
                         "message": phone_otp,
                         "data": {}
                     }, status=status.HTTP_400_BAD_REQUEST)
-            if otp_type == 'email':
+            if otp_type == 'Email':
                 email_otp = verify_otp_email(user.email, otp)
                 if email_otp != 'approved':
                     return Response(data={

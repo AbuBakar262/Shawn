@@ -227,9 +227,16 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
         return attrs
 
 
+OTP_TYPE_CHOICES = (
+    ('email', 'email'),
+    ('phone', 'phone'),
+)
+
+
 class VerifyOtpSerializer(serializers.Serializer):
     user = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='id', required=True)
     otp = serializers.CharField(required=True)
+    otp_type = serializers.ChoiceField(choices=OTP_TYPE_CHOICES, required=True)
 
 
 class ResetPasswordSerializer(serializers.ModelSerializer):

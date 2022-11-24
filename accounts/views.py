@@ -187,13 +187,23 @@ class UserViewSet(viewsets.ModelViewSet):
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             otp = serializer.validated_data.get('otp')
             user = User.objects.get(id=request.data.get('user'))
-            phone_otp = verify_otp_phone(user.phone, otp)
-            if phone_otp != 'approved':
-                return Response(data={
-                    "statusCode": 400, "error": False,
-                    "message": phone_otp,
-                    "data": {}
-                }, status=status.HTTP_400_BAD_REQUEST)
+            otp_type = request.data.get('otp_type')
+            if otp_type == 'phone':
+                phone_otp = verify_otp_phone(user.phone, otp)
+                if phone_otp != 'approved':
+                    return Response(data={
+                        "statusCode": 400, "error": False,
+                        "message": phone_otp,
+                        "data": {}
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            if otp_type == 'email':
+                email_otp = verify_otp_email(user.email, otp)
+                if email_otp != 'approved':
+                    return Response(data={
+                        "statusCode": 400, "error": False,
+                        "message": email_otp,
+                        "data": {}
+                    }, status=status.HTTP_400_BAD_REQUEST)
             user_serializer = UserSerializer(user)
             return Response(data={
                 "statusCode": 200, "error": False,

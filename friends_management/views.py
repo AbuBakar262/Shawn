@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
+from notification.models import DeviceRegistration
+from sean_backend.utils import notification
 
 # Create your views here.
 
@@ -99,6 +101,9 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_400_BAD_REQUEST)
             if friend.is_account == "Public":
                 Friend.objects.create(user=user, friend=friend)
+                registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
+                notification(device_id=registration_id, title="Friend",
+                             body="{} is now your friend".format(user.username))
                 return Response(data={
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
@@ -109,6 +114,8 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     }
                 }, status=status.HTTP_200_OK)
             friend_request = FriendRequest.objects.create(user=user, receiver_friend_request=friend)
+            registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
+            notification(device_id=registration_id, title="Friend Request", body="{} sent you friend request".format(user.username))
             return Response(
                 data={
                     "status": "success",

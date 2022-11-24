@@ -14,10 +14,8 @@ from pathlib import Path
 import os
 import datetime
 
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -67,8 +65,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -102,7 +100,6 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': datetime.timedelta(days=365),
 }
 
-
 ROOT_URLCONF = 'sean_backend.urls'
 
 TEMPLATES = [
@@ -122,7 +119,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'sean_backend.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
@@ -144,7 +140,6 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -178,7 +173,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'sean_backend.validators.SymbolValidator', },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -192,7 +186,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
@@ -202,15 +195,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'us2.smtp.mailhostbox.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = os.environ.get('EMAIL')
-# EMAIL_HOST_PASSWORD = os.environ.get('PASSWORD')
-
-
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 EMAIL_HOST = 'smtp.sendgrid.net'
 # this is exactly the value 'apikey'
@@ -219,9 +203,6 @@ EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'ahsan.spyresync@gmail.com'
-
-
-FRONTEND_FORGET_PASSWORD_URL = os.getenv('FRONTEND_FORGET_PASSWORD_URL')
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {

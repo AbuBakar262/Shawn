@@ -3,7 +3,9 @@ from pyfcm import FCMNotification
 from rest_framework.response import Response
 
 from sean_backend.settings import FIREBASE_API_KEY
+
 push_service = FCMNotification(api_key=FIREBASE_API_KEY)
+
 
 class PermissionsUtil:
 

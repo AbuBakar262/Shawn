@@ -18,7 +18,7 @@ class FriendRequestListSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['user'] = UserSerializer(instance.user).data
-        representation['friend_request_count'] = FriendRequest.objects.filter(receiver_friend_request=instance.receiver_friend_request,
+        representation['total'] = FriendRequest.objects.filter(receiver_friend_request=instance.receiver_friend_request,
                                                                               status='pending').count()
         return representation
 

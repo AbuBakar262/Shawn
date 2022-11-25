@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from notification.models import DeviceRegistration
 from sean_backend.utils import notification
 
+
 # Create your views here.
 
 
@@ -145,12 +146,11 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 "status": True,
                 "status_code": status.HTTP_200_OK,
                 "message": "Friend Request List",
-                "responsePayload": serializer.data
+                "data": serializer.data
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({
                 "status": False,
-                "status_code": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -180,6 +180,9 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_400_BAD_REQUEST)
             if serializer.validated_data['status'] == 'accepted':
                 Friend.objects.create(user=friend_request.user, friend=friend_request.receiver_friend_request)
+                registration_id = DeviceRegistration.objects.filter(user=friend_request.user).first().registration_id
+                notification(device_id=registration_id, title="Friend",
+                             body="{} is now your friend".format(friend_request.receiver_friend_request.username))
                 friend_request.delete()
                 return Response(data={
                     "status": "success",

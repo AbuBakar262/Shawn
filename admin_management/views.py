@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from admin_management.serializers import AdminLoginSerializer
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
 
 class AdminViewSet(viewsets.ModelViewSet):
@@ -19,8 +20,11 @@ class AdminViewSet(viewsets.ModelViewSet):
                      "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
         user = serializer.validated_data['user']
-        user_data = UserSerializer(user).data
-        response = {"statusCode": 200, "error": False, "message": "Admin Login successfully!", "data": user_data}
+        response = {"statusCode": 200, "error": False, "message": "Admin Login successfully!", "data": {
+            "user": UserSerializer(user).data,
+            "access": str(AccessToken.for_user(user)),
+            "refresh": str(RefreshToken.for_user(user))
+        }}
         return Response(response, status=status.HTTP_200_OK)
 
     def list(self, request, *args, **kwargs):

@@ -31,6 +31,9 @@ ALLOWED_HOSTS = ['*']
 ACCOUNT_SID_TWILIO = os.getenv('ACCOUNT_SID_TWILIO')
 AUTH_TOKEN_TWILIO = os.getenv('AUTH_TOKEN_TWILIO')
 FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY')
+MONGODB_CONNECTING_STRING = os.getenv('MONGODB_CONNECTING_STRING')
+MONGODB_NAME = os.getenv('MONGODB_NAME')
+# DJANGO_ALLOW_ASYNC_UNSAFE = os.getenv('DJANGO_ALLOW_ASYNC_UNSAFE')
 # Application definition
 
 INSTALLED_APPS = [
@@ -49,7 +52,8 @@ INSTALLED_APPS = [
     'location',
     'event',
     'notification',
-    'admin_management'
+    'admin_management',
+    'channels'
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -101,6 +105,7 @@ SIMPLE_JWT = {
 }
 
 ROOT_URLCONF = 'sean_backend.urls'
+ASGI_APPLICATION = 'sean_backend.asgi.application'
 
 TEMPLATES = [
     {
@@ -119,7 +124,14 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'sean_backend.wsgi.application'
-
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 

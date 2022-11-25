@@ -3,41 +3,40 @@ from rest_framework import serializers
 from accounts.serializers import UserSerializer
 from friends_management.models import *
 from django.utils.translation import gettext_lazy as _
-
-FRIEND_REQUEST_STATUS = (
-    ('accepted', 'Accepted'),
-    ('rejected', 'Rejected')
-)
+from notification.models import *
 
 
 class FriendRequestListSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="sender.username")
+    profile_thumbnail = serializers.FileField(source="sender.profile_thumbnail")
+
     class Meta:
-        model = FriendRequest
-        fields = ['id', 'user', 'receiver_friend_request', 'status', 'created_at', 'updated_at']
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['user'] = UserSerializer(instance.user).data
-        representation['total'] = FriendRequest.objects.filter(receiver_friend_request=instance.receiver_friend_request,
-                                                                              status='pending').count()
-        return representation
+        model = Notification
+        fields = ['id', 'sender', 'receiver', 'username', 'profile_thumbnail', 'message_title', 'message_body', 'type',
+                  'read_status', 'created_at', 'updated_at']
 
 
-class FriendRequestActionSerializer(serializers.ModelSerializer):
-    friend_request = serializers.SlugRelatedField(queryset=FriendRequest.objects.all(), slug_field='id', required=True)
+FRIEND_REQUEST_STATUS = (
+    ('Accepted', 'Accepted'),
+    ('Rejected', 'Rejected')
+)
+
+
+class FriendRequestActionSerializer(serializers.Serializer):
+    friend_request = serializers.SlugRelatedField(queryset=Notification.objects.all(), slug_field='id', required=True)
     status = serializers.ChoiceField(choices=FRIEND_REQUEST_STATUS, required=True)
-
-    class Meta:
-        model = FriendRequest
-        fields = ['friend_request', 'status']
+    friend_request_sender = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='id', required=True)
 
     def validate(self, attrs):
-        status = attrs.get('status')
-        friend_request_id = attrs.get('friend_request')
-        if not status in ['accepted', 'rejected']:
-            raise serializers.ValidationError(_("Status must be accepted or rejected"))
-        if not friend_request_id.status == 'pending':
-            raise serializers.ValidationError(_("Friend request is already {}").format(friend_request_id.status))
+        user = self.context['request'].user
+        friend_request = attrs.get('friend_request')
+        friend_request_sender = attrs.get('friend_request_sender')
+        if friend_request.type != 'Send Request':
+            raise serializers.ValidationError({'error': _('This is not a friend request.')})
+        if friend_request.receiver != user:
+            raise serializers.ValidationError({'error': _('You are not the receiver of this friend request.')})
+        if friend_request_sender != friend_request.sender:
+            raise serializers.ValidationError({'error': _('This is not your friend request.')})
         return attrs
 
 
@@ -46,8 +45,9 @@ class FriendSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'apple', 'instagram', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'gender', 'phone', 'dob', 'bio', 'email_verified', 'phone_verified', 'is_friend']
+        fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
+                  'profile_pic', 'profile_thumbnail', 'gender', 'phone', 'dob', 'bio', 'email_verified',
+                  'phone_verified', 'is_friend']
 
     def get_is_friend(self, obj):
         if Friend.objects.filter(Q(user=obj) | Q(friend=obj)).exists():

@@ -30,3 +30,6 @@ class Notification(models.Model):
     read_status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.sender} - {self.receiver} - {self.message_title} - {self.type}'

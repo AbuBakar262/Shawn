@@ -6,8 +6,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-
-from notification.models import DeviceRegistration
+from notification.models import *
 from sean_backend.utils import notification
 
 
@@ -80,7 +79,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "Friend not found"
                 }, status=status.HTTP_400_BAD_REQUEST)
-            friend_request = FriendRequest.objects.filter(user=user, receiver_friend_request=friend).first()
+            friend_request = Notification.objects.filter(sender=user, receiver=friend).first()
             if friend_request:
                 return Response(data={
                     "status": "error",
@@ -102,6 +101,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_400_BAD_REQUEST)
             if friend.is_account == "Public":
                 Friend.objects.create(user=user, friend=friend)
+                friend_request = Notification.objects.create(sender=user, receiver=friend, type="Add Friend")
                 registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
                 notification(device_id=registration_id, title="Friend",
                              body="{} is now your friend".format(user.username))
@@ -110,11 +110,11 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request accepted",
                     "data": {
-                        "user": UserSerializer(user).data,
-                        "friend": UserSerializer(friend).data
+                        "user": UserSerializer(friend_request.sender).data,
+                        "friend": UserSerializer(friend_request.receiver).data
                     }
                 }, status=status.HTTP_200_OK)
-            friend_request = FriendRequest.objects.create(user=user, receiver_friend_request=friend)
+            friend_request = Notification.objects.create(sender=user, receiver=friend, type="Send Request")
             registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
             notification(device_id=registration_id, title="Friend Request", body="{} sent you friend request".format(user.username))
             return Response(
@@ -123,8 +123,8 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request sent successfully",
                     "data": {
-                        "user": UserSerializer(friend_request.user).data,
-                        "friend": UserSerializer(friend_request.receiver_friend_request).data
+                        "user": friend_request.sender.id,
+                        "friend": friend_request.receiver.id
                     }
                 },
                 status=status.HTTP_200_OK
@@ -137,15 +137,15 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
-    def friend_request_list(self, request, *args, **kwargs):
+    def notification_list(self, request, *args, **kwargs):
         try:
             user = request.user
-            friend_request = FriendRequest.objects.filter(receiver_friend_request=user)
+            friend_request = Notification.objects.filter(receiver=user)
             serializer = FriendRequestListSerializer(friend_request, many=True)
             return Response({
                 "status": True,
                 "status_code": status.HTTP_200_OK,
-                "message": "Friend Request List",
+                "message": "Notification List",
                 "data": serializer.data
             }, status=status.HTTP_200_OK)
         except Exception as e:
@@ -157,56 +157,58 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
     def friend_request_action(self, request, *args, **kwargs):
         try:
             user = request.user
-            serializer = FriendRequestActionSerializer(data=request.data)
+            serializer = FriendRequestActionSerializer(data=request.data, context={"request": request})
             try:
                 serializer.is_valid(raise_exception=True)
             except Exception as e:
                 error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            friend_request_id = serializer.validated_data['friend_request']
-            friend_request = FriendRequest.objects.filter(id=friend_request_id.id).first()
+            friend_request_id = serializer.validated_data.get("friend_request").id
+            friend_request_sender = serializer.validated_data.get("friend_request_sender")
+            friend_request = Notification.objects.filter(id=friend_request_id, sender=friend_request_sender).first()
             if not friend_request:
                 return Response(data={
-                    "status": "error",
+                    "status": False,
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "Friend request not found"
                 }, status=status.HTTP_400_BAD_REQUEST)
-            if friend_request.receiver_friend_request != user:
+            if friend_request.receiver != user:
                 return Response(data={
-                    "status": "error",
+                    "status": False,
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "You are not authorized to perform this action"
                 }, status=status.HTTP_400_BAD_REQUEST)
-            if serializer.validated_data['status'] == 'accepted':
-                Friend.objects.create(user=friend_request.user, friend=friend_request.receiver_friend_request)
-                registration_id = DeviceRegistration.objects.filter(user=friend_request.user).first().registration_id
+            if serializer.validated_data['status'] == 'Accepted':
+                Friend.objects.create(user=friend_request.sender, friend=friend_request.receiver)
+                Notification.objects.create(sender=friend_request.receiver, receiver=friend_request.sender, type="Accept Request")
+                registration_id = DeviceRegistration.objects.filter(user=friend_request.sender).first().registration_id
                 notification(device_id=registration_id, title="Friend",
-                             body="{} is now your friend".format(friend_request.receiver_friend_request.username))
+                             body="{} is now your friend".format(friend_request.receiver.username))
                 friend_request.delete()
                 return Response(data={
-                    "status": "success",
+                    "status": True,
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request accepted"
                 }, status=status.HTTP_200_OK)
-            elif serializer.validated_data['status'] == 'rejected':
-                RejectRequest.objects.create(user=friend_request.user,
-                                             rejected_user=friend_request.receiver_friend_request)
+            elif serializer.validated_data['status'] == 'Rejected':
+                RejectRequest.objects.create(user=friend_request.sender,
+                                             rejected_user=friend_request.receiver)
                 friend_request.delete()
                 return Response(data={
-                    "status": "success",
+                    "status": True,
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request rejected"
                 }, status=status.HTTP_200_OK)
             else:
                 return Response(data={
-                    "status": "error",
+                    "status": False,
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "message": "Invalid status"
                 }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(data={
-                "status": "error",
+                "status": False,
                 "status_code": status.HTTP_400_BAD_REQUEST,
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -214,7 +216,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
     def friend_request_delete(self, request, *args, **kwargs):
         try:
             user = request.user
-            friend_request = FriendRequest.objects.filter(id=request.data['friend_request_id']).first()
+            friend_request = Notification.objects.filter(id=request.data['friend_request_id']).first()
             if not friend_request:
                 return Response(data={
                     "status": "error",
@@ -227,6 +229,13 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request deleted successfully"
+                }, status=status.HTTP_200_OK)
+            if friend_request.receiver == user:
+                friend_request.delete()
+                return Response(data={
+                    "status": "success",
+                    "status_code": status.HTTP_200_OK,
+                    "message": "Notification deleted successfully"
                 }, status=status.HTTP_200_OK)
             else:
                 return Response(data={

@@ -94,14 +94,14 @@ class UserViewSet(viewsets.ModelViewSet):
             user = User.objects.get(email=user_data.get("email"))
             if not user_data.get('create_profile'):
                 return Response(data={
-                    "statusCode": 201,
+                    "statusCode": 200,
                     "error": False,
                     "message": "User logged in successfully",
                     "data": serializer.data
                 }, status=status.HTTP_200_OK)
             return Response(
                 data={
-                    "statusCode": 201,
+                    "statusCode": 200,
                     "error": False,
                     "message": "User logged in successfully",
                     "data": {

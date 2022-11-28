@@ -61,6 +61,7 @@ class UserViewSet(viewsets.ModelViewSet):
             instance._prefetched_objects_cache = {}
         response = {"statusCode": 200, "error": False, "message": "Profile Created Successfully!",
                     "data": {
+                        "create_profile": serializer.data.get("create_profile"),
                         "user": serializer.data,
                         "access": str(AccessToken.for_user(instance)),
                         "refresh": str(RefreshToken.for_user(instance))}}

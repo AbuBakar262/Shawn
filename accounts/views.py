@@ -105,6 +105,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     "error": False,
                     "message": "User logged in successfully",
                     "data": {
+                        "create_profile": serializer.data.get("create_profile"),
                         "user": serializer.data,
                         "access": str(AccessToken.for_user(user)),
                         "refresh": str(RefreshToken.for_user(user))

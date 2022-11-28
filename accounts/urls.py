@@ -22,6 +22,7 @@ urlpatterns = [
 
     # Social Login
     path("api/social_login", SocialViewSet.as_view({"post": "social_login"}), name="social_login"),
+    path("api/social_profile_exist", SocialViewSet.as_view({"post": "social_profile_exist"}), name="social_profile_exist"),
 
     # Block User
     path("api/block_user", BlockUserViewSet.as_view({"post": "block_user"}), name="block_user"),

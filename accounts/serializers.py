@@ -30,6 +30,10 @@ ACCOUNT_CHOICE = (
     ('Public', 'Public'),
     ('Private', 'Private')
 )
+SOCIAL_ACCOUNT_TYPE = (
+    ('Instagram', 'Instagram'),
+    ('Apple', 'Apple')
+)
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -74,14 +78,24 @@ class SignupSerializer(serializers.ModelSerializer):
                 DeviceRegistration.objects.create(user=user, registration_id=device_id)
         return user
 
+def image_validator(file):
+    max_file_size = 1024 * 1024 * 5  # 5MB
+    if file.size > max_file_size:
+        raise serializers.ValidationError(_('Max file size is 5MB'))
 
 class SocialLoginSerializer(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True)
     username = serializers.CharField(required=True)
     social_id = serializers.CharField(required=True)
-    email = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True, allow_null=True, allow_blank=True)
     device_id = serializers.CharField(required=True, write_only=True, allow_null=True, allow_blank=True)
-    account_type = serializers.CharField(required=True)
+    account_type = serializers.ChoiceField(choices=SOCIAL_ACCOUNT_TYPE, required=True, allow_null=True, allow_blank=True)
+    profile_pic = serializers.FileField(validators=[image_validator], required=False)
+    profile_thumbnail = serializers.FileField(validators=[image_validator], required=False)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True, allow_null=True, allow_blank=True)
+    phone = serializers.CharField(required=True, allow_null=True, allow_blank=True)
+    dob = serializers.DateField(required=False)
+    bio = serializers.CharField(required=True, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User
@@ -95,9 +109,12 @@ class SocialLoginSerializer(serializers.ModelSerializer):
         social_id = validated_data['social_id']
         device_id = validated_data['device_id']
         account_type = validated_data['account_type']
+        gender = validated_data['gender']
+        phone = validated_data['phone']
+        bio = validated_data['bio']
         with transaction.atomic():
-            if User.objects.filter(social_id=social_id, username=username, email=email.lower()).exists():
-                data = social_login(email=email.lower(), social_id=social_id, device_id=device_id)
+            if User.objects.filter(social_id=social_id, username=username).exists():
+                data = social_login(username=username, social_id=social_id, device_id=device_id)
                 return data
             else:
                 if User.objects.filter(email=email.lower()).exists():
@@ -107,17 +124,14 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                     message = ['username already exists']
                     raise serializers.ValidationError({'username': message})
                 user = User.objects.create(username=username, social_id=social_id, email=email.lower(),
-                                           account_type=account_type)
+                                           account_type=account_type, profile_pic=validated_data['profile_pic'],
+                                           profile_thumbnail=validated_data['profile_thumbnail'], gender=gender, phone=phone,
+                                           dob=validated_data['dob'], bio=bio, create_profile=True)
                 user.save()
             if not DeviceRegistration.objects.filter(user=user).exists():
                 DeviceRegistration.objects.create(user=user, registration_id=device_id)
         return user
 
-
-def image_validator(file):
-    max_file_size = 1024 * 1024 * 5  # 5MB
-    if file.size > max_file_size:
-        raise serializers.ValidationError(_('Max file size is 5MB'))
 
 
 class CreateUserProfileSerializer(serializers.ModelSerializer):
@@ -338,3 +352,7 @@ class UsersProfileSerializer(serializers.ModelSerializer):
             return True
         else:
             return False
+
+class SocialProfileExistSerializer(serializers.Serializer):
+    social_id = serializers.CharField(required=True)
+    username = serializers.CharField(required=True)

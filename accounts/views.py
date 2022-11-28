@@ -32,7 +32,7 @@ class UserViewSet(viewsets.ModelViewSet):
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
-            response = {"statusCode": 201, "error": False, "message": "User created successfully!",
+            response = {"statusCode": 201, "error": False, "message": "User Registered Successfully!",
                         "data": serializer.data}
             return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -420,7 +420,7 @@ class SocialViewSet(viewsets.ModelViewSet):
             else:
                 return Response(data={
                     "statusCode": 200, "error": False,
-                    "message": "User Signup successfully",
+                    "message": "User Registered Successfully!",
                     "data": serializer_detail.data
                 }, status=status.HTTP_200_OK)
         except Exception as e:

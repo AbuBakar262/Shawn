@@ -143,7 +143,7 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
             age = relativedelta(date.today(), dob).years
             if age < 16:
                 raise serializers.ValidationError(
-                    {'dob': _("You must be 16 or older to use Sean APP")})
+                    {'dob': _("You must be 16 or older to use Sean App")})
         if User.objects.filter(phone=attrs.get("phone")).exists():
             raise serializers.ValidationError(
                 {'phone': _("Phone number already exists")})

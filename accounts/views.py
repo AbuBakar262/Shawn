@@ -7,7 +7,7 @@ from event.serializers import *
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from accounts.utils import *
 from drf_yasg.utils import swagger_auto_schema
@@ -556,7 +556,7 @@ class BlockUserViewSet(viewsets.ModelViewSet):
 
 
 class UsersDelete(APIView):
-    # permission_classes = (IsAdminUser,)
+    permission_classes = (IsAdminUser,)
 
     def delete(self, request):
         """

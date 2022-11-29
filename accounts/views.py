@@ -160,7 +160,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     }
                 }, status=status.HTTP_200_OK)
             else:
-                user = User.objects.filter(email=email).first()
+                user = User.objects.filter(email=email.lower()).first()
                 otp = send_otp_email(user.email)
                 if otp != 'sent':
                     return Response(data={

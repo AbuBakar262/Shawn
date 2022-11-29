@@ -235,9 +235,15 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
         if email:
             if not User.objects.filter(email=email.lower()).exists():
                 raise serializers.ValidationError({'error': _('Email does not exist')})
+            if User.objects.filter(email=email.lower(), account_type="Instagram").exists()\
+                    or User.objects.filter(email=email.lower(), account_type="Apple").exists():
+                raise serializers.ValidationError({'error': _('You can not reset password because you are Social User')})
         if phone:
             if not User.objects.filter(phone=phone).exists():
                 raise serializers.ValidationError({'error': _('Phone does not exist')})
+            if User.objects.filter(phone=phone, account_type="Instagram").exists()\
+                    or User.objects.filter(phone=phone, account_type="Apple").exists():
+                raise serializers.ValidationError({'error': _('You can not reset password because you are Social User')})
         return attrs
 
 

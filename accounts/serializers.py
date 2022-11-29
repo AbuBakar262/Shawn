@@ -283,7 +283,7 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
         password = attrs.get('password')
         confirm_password = attrs.get('confirm_password')
         if password != confirm_password:
-            raise serializers.ValidationError(_('Password does not match'))
+            raise serializers.ValidationError({'error': _('Password and confirm password does not match!')})
         return attrs
 
 

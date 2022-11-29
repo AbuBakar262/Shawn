@@ -368,7 +368,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        PermissionsUtil.destroy_permission(request, instance)
+        # PermissionsUtil.destroy_permission(request, instance)
         profile = User.objects.filter(id=instance.id).first().profile_pic
         profile_thumb = User.objects.filter(id=instance.id).first().profile_thumbnail
         delete_image(profile, profile_thumb)

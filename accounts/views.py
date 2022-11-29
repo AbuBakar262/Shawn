@@ -1,3 +1,5 @@
+from rest_framework.views import APIView
+
 from friends_management.models import Friend
 from accounts.serializers import *
 from location.serializers import *
@@ -368,7 +370,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        # PermissionsUtil.destroy_permission(request, instance)
+        PermissionsUtil.destroy_permission(request, instance)
         profile = User.objects.filter(id=instance.id).first().profile_pic
         profile_thumb = User.objects.filter(id=instance.id).first().profile_thumbnail
         delete_image(profile, profile_thumb)
@@ -551,3 +553,43 @@ class BlockUserViewSet(viewsets.ModelViewSet):
                      "status_code": status.HTTP_400_BAD_REQUEST,
                      "message": str(e)}
             return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UsersDelete(APIView):
+    # permission_classes = (IsAdminUser,)
+
+    def delete(self, request):
+        """
+        Delete single user
+
+        parameter : User id
+        Authentication : None
+        """
+        try:
+            ids = request.data.get('ids')
+            if not ids:
+                message = {"message": {"user ids required"}}
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": message}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            users_not_found = []
+            users_exists = []
+            for user_id in ids:
+                user_obj_check = User.objects.filter(id=user_id).exists()
+                if not user_obj_check:
+                    users_not_found.append(user_id)
+                if user_obj_check:
+                    profile = User.objects.filter(id=user_id).first().profile_pic
+                    profile_thumb = User.objects.filter(id=user_id).first().profile_thumbnail
+                    delete_image(profile, profile_thumb)
+                    users_exists.append(user_id)
+                User.objects.filter(id=user_id).delete()
+            message_not_exists = {"user_ids": ["Object with ids={} does not exist.".format(users_not_found)]}
+            message_exists = {"user_ids": ["Object with ids={} deleted successfully.".format(users_exists)]}
+            response = {"statusCode": 200, "error": False,
+                        "not_found": message_not_exists, "message": message_exists}
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)

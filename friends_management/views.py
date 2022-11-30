@@ -1,3 +1,5 @@
+from itertools import chain
+
 from django.db.models import Q
 from accounts.models import *
 from accounts.serializers import UserProfileSerializer
@@ -18,25 +20,20 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
 
     def contact_list(self, request, *args, **kwargs):
         try:
-            user = User.objects.get(id=request.user.id)
-            friend_list = Friend.objects.filter(user=user)
-            friend_list = [friend.friend.id for friend in friend_list]
-            reject_list = RejectRequest.objects.filter(user=user)
-            reject_list = [reject.rejected_user.id for reject in reject_list]
-            if BlockUser.objects.filter(user=user).exists():
-                block_list = BlockUser.objects.filter(user=user)
-                block_list = [block.block_user.id for block in block_list]
+            friend_list = Friend.objects.filter(user=request.user).values_list("id", flat=True)
+            reject_list = RejectRequest.objects.filter(user=request.user).values_list("id", flat=True)
+            if BlockUser.objects.filter(user=request.user).exists():
+                block_list = BlockUser.objects.filter(user=request.user).values_list("id", flat=True)
             else:
                 block_list = []
-            if BlockUser.objects.filter(block_user=user).exists():
-                block_list1 = BlockUser.objects.filter(block_user=user)
-                block_list1 = [block.user.id for block in block_list1]
-                block_list = block_list + block_list1
+            if BlockUser.objects.filter(block_user=request.user).exists():
+                block_list1 = BlockUser.objects.filte(user=request.user).values_list("id", flat=True)
+                block_list = list(chain(block_list, block_list1))
             else:
                 block_list1 = []
-            block_list = block_list + block_list1
+            block_list = list(chain(block_list, block_list1))
             contact_list = User.objects.exclude(id__in=friend_list).exclude(id__in=reject_list).exclude(
-                id=user.id).exclude(is_superuser=True).exclude(id__in=block_list).exclude(create_profile=False)
+                id=request.user.id).exclude(is_superuser=True).exclude(id__in=block_list).exclude(create_profile=False)
             serializer = UserProfileSerializer(contact_list, many=True)
             return Response({
                 "status": True,
@@ -79,34 +76,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             user = request.user
-            # friend = User.objects.get(id=request.data.get("friend_request"))
-            friend = request.data.get("friend_request")
-            # if not friend:
-            #     return Response(data={
-            #         "status": "error",
-            #         "status_code": status.HTTP_400_BAD_REQUEST,
-            #         "message": "Friend not found"
-            #     }, status=status.HTTP_400_BAD_REQUEST)
-            # friend_request = Notification.objects.filter(sender=user, receiver=friend).first()
-            # if friend_request:
-            #     return Response(data={
-            #         "status": "error",
-            #         "status_code": status.HTTP_400_BAD_REQUEST,
-            #         "message": "Friend request already sent"
-            #     }, status=status.HTTP_400_BAD_REQUEST)
-            # existing_friend = Friend.objects.filter(user=user, friend=friend).first()
-            # if existing_friend:
-            #     return Response(data={
-            #         "status": "error",
-            #         "status_code": status.HTTP_400_BAD_REQUEST,
-            #         "message": "Already friends"
-            #     }, status=status.HTTP_400_BAD_REQUEST)
-            # if user == friend:
-            #     return Response(data={
-            #         "status": "error",
-            #         "status_code": status.HTTP_400_BAD_REQUEST,
-            #         "message": "You can't send friend request to yourself"
-            #     }, status=status.HTTP_400_BAD_REQUEST)
+            friend = User.objects.get(id=request.data.get("friend_request"))
             if friend.is_account == "Public":
                 Friend.objects.create(user=user, friend=friend)
                 friend_request = Notification.objects.create(sender=user, receiver=friend, type="Add Friend")
@@ -130,10 +100,11 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
                     "message": "Friend request sent successfully",
-                    "data": {
+                    "data": [{
                         "user": friend_request.sender.id,
-                        "friend": friend_request.receiver.id
-                    }
+                        "friend": friend_request.receiver.id,
+                        "friend_request_id": friend_request.id
+                    }]
                 },
                 status=status.HTTP_200_OK
             )
@@ -164,7 +135,6 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
 
     def friend_request_action(self, request, *args, **kwargs):
         try:
-            user = request.user
             serializer = FriendRequestActionSerializer(data=request.data, context={"request": request})
             try:
                 serializer.is_valid(raise_exception=True)
@@ -172,24 +142,10 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            # friend_request_id = serializer.validated_data.get("friend_request").id
-            # friend_request_sender = serializer.validated_data.get("friend_request_sender")
-            friend_request_id = request.data.get("friend_request")
-            friend_request_sender = request.data.get("friend_request_sender")
+            friend_request_id = Notification.objects.get(id=request.data.get("friend_request"))
+            friend_request_sender = User.objects.get(id=request.data.get("friend_request_sender"))
             status_type = request.data.get('status')
             friend_request = Notification.objects.filter(id=friend_request_id.id, sender=friend_request_sender).first()
-            # if not friend_request:
-            #     return Response(data={
-            #         "status": False,
-            #         "status_code": status.HTTP_400_BAD_REQUEST,
-            #         "message": "Friend request not found"
-            #     }, status=status.HTTP_400_BAD_REQUEST)
-            # if friend_request.receiver != user:
-            #     return Response(data={
-            #         "status": False,
-            #         "status_code": status.HTTP_400_BAD_REQUEST,
-            #         "message": "You are not authorized to perform this action"
-            #     }, status=status.HTTP_400_BAD_REQUEST)
             if status_type == 'Accepted':
                 Friend.objects.create(user=friend_request.sender, friend=friend_request.receiver)
                 Notification.objects.create(sender=friend_request.receiver, receiver=friend_request.sender, type="Accept Request")
@@ -234,13 +190,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             user = request.user
-            friend_request = Notification.objects.filter(id=request.data.get('friend_request_id').id).first()
-            # if not friend_request:
-            #     return Response(data={
-            #         "status": "error",
-            #         "status_code": status.HTTP_400_BAD_REQUEST,
-            #         "message": "Friend request not found"
-            #     }, status=status.HTTP_400_BAD_REQUEST)
+            friend_request = Notification.objects.get(id=request.data.get('friend_request_id'))
             if friend_request.sender == user:
                 friend_request.delete()
                 return Response(data={
@@ -300,13 +250,6 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             user = request.user
             friend = request.data.get('friend_id')
-            # friend = User.objects.filter(id=request.data['friend_id']).first()
-            # if not friend:
-            #     return Response(data={
-            #         "status": "error",
-            #         "status_code": status.HTTP_400_BAD_REQUEST,
-            #         "message": "Friend not found"
-            #     }, status=status.HTTP_400_BAD_REQUEST)
             if Friend.objects.filter(user=user, friend=friend):
                 Friend.objects.filter(user=user, friend=friend).delete()
                 return Response(data={

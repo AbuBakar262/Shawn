@@ -2,6 +2,7 @@ import googlemaps
 from pymongo import MongoClient, GEO2D
 from rest_framework.response import Response
 
+from friends_management.models import Friend
 from sean_backend.settings import MONGODB_CONNECTING_STRING, MONGODB_NAME
 
 
@@ -31,6 +32,10 @@ def get_mongodb_database():
 def update_location(user, latitude, longitude):
     try:
         user_id = user.id
+        profile_thumbnail = user.profile_thumbnail.url
+        user_friend = Friend.objects.filter(user=user).values_list("friend_id", flat=True)
+        friend_user = Friend.objects.filter(friend=user).values_list("user_id", flat=True)
+        friends_list = list(user_friend) + (list(friend_user))
         latitude = latitude
         longitude = longitude
         dbname = get_mongodb_database()
@@ -47,10 +52,14 @@ def update_location(user, latitude, longitude):
         user_found = collection_name.find({"user_id": user_id})
         user_in_db = list(user_found)
         if len(user_in_db) == 0:
-            collection_name.insert_one({"user_id": user_id, "location": [float(latitude), float(longitude)]})
+            collection_name.insert_one({"user_id": user_id, "profile_thumbnail": profile_thumbnail,
+                                        "friend_ids": friends_list,
+                                        "location": [float(latitude), float(longitude)]})
         else:
             myquery = user_in_db[0]
-            new_values = {"$set": {"user_id": user_id, "location": [float(latitude), float(longitude)]}}
+            new_values = {"$set": {"user_id": user_id, "profile_thumbnail": profile_thumbnail,
+                                   "friend_ids": friends_list,
+                                   "location": [float(latitude), float(longitude)]}}
             collection_name.update_one(myquery, new_values)
     except Exception as e:
         error = {"status": False, "message": e.args[0]}

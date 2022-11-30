@@ -94,3 +94,15 @@ def social_login(username, social_id, device_id):
         return user
     else:
         raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
+
+def social_account_exist(username, social_id, email):
+    if username:
+        if User.objects.filter(social_id=social_id, username=username).exists():
+            return True
+        else:
+            return False
+    else:
+        if User.objects.filter(social_id=social_id, email=email).exists():
+            return True
+        else:
+            return False

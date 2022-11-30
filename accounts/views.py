@@ -437,22 +437,15 @@ class SocialViewSet(viewsets.ModelViewSet):
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             social_id = request.data.get("social_id")
             username = request.data.get("username")
-            if User.objects.filter(social_id=social_id, username=username).exists():
-                return Response(data={
-                    "statusCode": 200, "error": False,
-                    "message": "Social Profile Exist",
-                    "data": {
-                        "create_profile": True
-                    }
-                }, status=status.HTTP_200_OK)
-            else:
-                return Response(data={
-                    "statusCode": 200, "error": False,
-                    "message": "Social Profile Not Exist",
-                    "data": {
-                        "create_profile": False
-                    }
-                }, status=status.HTTP_200_OK)
+            email = request.data.get("email")
+            data = social_account_exist(username,social_id,email)
+            return Response(data={
+                "statusCode": 200, "error": False,
+                "message": "Social Profile Exist",
+                "data": {
+                    "create_profile": data
+                }
+            }, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                      "errors": e.args[0]}

@@ -361,4 +361,12 @@ class UsersProfileSerializer(serializers.ModelSerializer):
 
 class SocialProfileExistSerializer(serializers.Serializer):
     social_id = serializers.CharField(required=True)
-    username = serializers.CharField(required=True)
+    username = serializers.CharField(required=False)
+    email = serializers.EmailField(required=False)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        username = attrs.get('username')
+        if email is None and username is None:
+            raise serializers.ValidationError({'error': _('Email or username is required, Please enter one of them')})
+        return attrs

@@ -80,20 +80,33 @@ def delete_image(profile, profile_thumb):
 
 
 # When user Login device_id will be saved in DeviceRegistration table
-def social_login(username, social_id, device_id):
+def social_login(username, social_id, device_id, email):
+    if username:
+        if not User.objects.filter(username=username).exists():
+            raise serializers.ValidationError({'username': _('username does not exists')})
 
-    if not User.objects.filter(username=username).exists():
-        raise serializers.ValidationError({'username': _('username does not exists')})
-
-    if User.objects.filter(social_id=social_id, username=username).exists():
-        user = User.objects.filter(social_id=social_id, username=username).first()
-        if not DeviceRegistration.objects.filter(user=user).exists():
-            DeviceRegistration.objects.create(user=user, registration_id=device_id)
-        if not DeviceRegistration.objects.filter(user=user, registration_id=device_id).exists():
-            DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
-        return user
+        if User.objects.filter(social_id=social_id, username=username).exists():
+            user = User.objects.filter(social_id=social_id, username=username).first()
+            if not DeviceRegistration.objects.filter(user=user).exists():
+                DeviceRegistration.objects.create(user=user, registration_id=device_id)
+            if not DeviceRegistration.objects.filter(user=user, registration_id=device_id).exists():
+                DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
+            return user
+        else:
+            raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
     else:
-        raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
+        if not User.objects.filter(email=email.lower()).exists():
+            raise serializers.ValidationError({'email': _('email does not exists')})
+
+        if User.objects.filter(social_id=social_id, email=email.lower()).exists():
+            user = User.objects.filter(social_id=social_id, email=email.lower()).first()
+            if not DeviceRegistration.objects.filter(user=user).exists():
+                DeviceRegistration.objects.create(user=user, registration_id=device_id)
+            if not DeviceRegistration.objects.filter(user=user, registration_id=device_id).exists():
+                DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
+            return user
+        else:
+            raise serializers.ValidationError({'unauthorized': _('Invalid credentials')})
 
 def social_account_exist(username, social_id, email):
     if username:

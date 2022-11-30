@@ -85,7 +85,7 @@ def image_validator(file):
 
 class SocialLoginSerializer(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True)
-    username = serializers.CharField(required=True)
+    username = serializers.CharField(required=True, allow_null=True, allow_blank=True)
     social_id = serializers.CharField(required=True)
     email = serializers.EmailField(required=True, allow_null=True, allow_blank=True)
     device_id = serializers.CharField(required=True, write_only=True, allow_null=True, allow_blank=True)
@@ -113,8 +113,9 @@ class SocialLoginSerializer(serializers.ModelSerializer):
         phone = validated_data['phone']
         bio = validated_data['bio']
         with transaction.atomic():
-            if User.objects.filter(social_id=social_id, username=username).exists():
-                data = social_login(username=username, social_id=social_id, device_id=device_id)
+            if User.objects.filter(social_id=social_id, username=username).exists() \
+                    or User.objects.filter(social_id=social_id, email=email.lower()).exists():
+                data = social_login(username,social_id,device_id, email)
                 return data
             else:
                 if User.objects.filter(email=email.lower()).exists():

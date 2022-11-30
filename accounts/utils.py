@@ -102,7 +102,7 @@ def social_account_exist(username, social_id, email):
         else:
             return False
     else:
-        if User.objects.filter(social_id=social_id, email=email).exists():
+        if User.objects.filter(social_id=social_id, email=email.lower()).exists():
             return True
         else:
             return False

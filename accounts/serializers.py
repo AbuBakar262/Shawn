@@ -283,6 +283,10 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
         model = User
         fields = ['password', 'confirm_password']
 
+    @staticmethod
+    def validate_password(data):
+        validators.validate_password(password=data, user=User)
+        return data
     def validate(self, attrs):
         password = attrs.get('password')
         confirm_password = attrs.get('confirm_password')

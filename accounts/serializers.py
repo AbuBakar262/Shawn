@@ -124,6 +124,9 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                 if User.objects.filter(username=username).exists():
                     message = ['username already exists']
                     raise serializers.ValidationError({'username': message})
+                if User.objects.filter(social_id=social_id).exists():
+                    message = ['social_id already exists']
+                    raise serializers.ValidationError({'social_id': message})
                 user = User.objects.create(username=username, social_id=social_id, email=email.lower(),
                                            account_type=account_type, profile_pic=validated_data['profile_pic'],
                                            profile_thumbnail=validated_data['profile_thumbnail'], gender=gender, phone=phone,

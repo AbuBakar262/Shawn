@@ -94,7 +94,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
     account_type = serializers.ChoiceField(choices=SOCIAL_ACCOUNT_TYPE, required=True, allow_null=True,
                                            allow_blank=True)
     profile_pic = serializers.FileField(validators=[image_validator], required=False)
-    profile_thumbnail = serializers.FileField(validators=[image_validator], required=False, allow_empty_file=True)
+    profile_thumbnail = serializers.FileField(validators=[image_validator], required=False)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True, allow_null=True, allow_blank=True)
     phone = serializers.CharField(required=True, allow_null=True, allow_blank=True)
     dob = serializers.DateField(required=False)
@@ -167,6 +167,7 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(required=True)
     dob = serializers.DateField(required=True)
     bio = serializers.CharField(required=True)
+    social_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User
@@ -336,10 +337,11 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         phone = attrs.get('phone')
+        dob = attrs.get('dob')
         profile_pic = attrs.get('profile_pic')
         profile_thumbnail = attrs.get('profile_thumbnail')
         user = self.context['request'].user
-        if User.objects.filter(phone=phone).exclude(is_superuser=True).exclude(id=user.id).exists():
+        if User.objects.filter(phone=phone).exclude(id=user.id).exists():
             raise serializers.ValidationError({'phone': _('phone already exists')})
         profile = User.objects.filter(id=user.id).first().profile_pic
         profile_thumb = User.objects.filter(id=user.id).first().profile_thumbnail
@@ -347,6 +349,11 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         profile_thumb_data = profile_thumb.name.split("profile_thumbnails/")[1] == profile_thumbnail
         if profile_data == False and profile_thumb_data == False:
             delete_image(profile=profile, profile_thumb=profile_thumb)
+        if dob:
+            age = relativedelta(date.today(), dob).years
+            if age < 16:
+                raise serializers.ValidationError(
+                    {'dob': _("You must be 16 or older to use Sean App")})
         return attrs
 
 

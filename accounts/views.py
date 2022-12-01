@@ -46,6 +46,14 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
+        user_id = kwargs.get('pk')
+        if not User.objects.filter(id=user_id).exists():
+            error = "User not found"
+            return Response(data={
+                "statusCode": 404, "error": True,
+                "message": "User not found",
+                "data": {"error": [error]}
+            }, status=status.HTTP_404_NOT_FOUND)
         instance = self.get_object()
         serializer = CreateUserProfileSerializer(instance, data=request.data, partial=partial,
                                                  context={'instance': instance})
@@ -324,7 +332,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
         response = {"statusCode": 200, "error": False, "message": "Profile Updated Successfully!",
-                    "data": serializer.data}
+                    "data": {"user": serializer.data}}
         return Response(data=response, status=status.HTTP_200_OK)
 
     def perform_update(self, serializer):

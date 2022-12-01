@@ -78,10 +78,12 @@ class SignupSerializer(serializers.ModelSerializer):
                 DeviceRegistration.objects.create(user=user, registration_id=device_id)
         return user
 
+
 def image_validator(file):
     max_file_size = 1024 * 1024 * 5  # 5MB
     if file.size > max_file_size:
         raise serializers.ValidationError(_('Max file size is 5MB'))
+
 
 class SocialLoginSerializer(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True)
@@ -89,9 +91,10 @@ class SocialLoginSerializer(serializers.ModelSerializer):
     social_id = serializers.CharField(required=True)
     email = serializers.EmailField(required=True, allow_null=True, allow_blank=True)
     device_id = serializers.CharField(required=True, write_only=True, allow_null=True, allow_blank=True)
-    account_type = serializers.ChoiceField(choices=SOCIAL_ACCOUNT_TYPE, required=True, allow_null=True, allow_blank=True)
+    account_type = serializers.ChoiceField(choices=SOCIAL_ACCOUNT_TYPE, required=True, allow_null=True,
+                                           allow_blank=True)
     profile_pic = serializers.FileField(validators=[image_validator], required=False)
-    profile_thumbnail = serializers.FileField(validators=[image_validator], required=False)
+    profile_thumbnail = serializers.FileField(validators=[image_validator], required=False, allow_empty_file=True)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True, allow_null=True, allow_blank=True)
     phone = serializers.CharField(required=True, allow_null=True, allow_blank=True)
     dob = serializers.DateField(required=False)
@@ -115,7 +118,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             if User.objects.filter(social_id=social_id, username=username.lower()).exists() \
                     or User.objects.filter(social_id=social_id, email=email.lower()).exists():
-                data = social_login(username,social_id,device_id, email)
+                data = social_login(username, social_id, device_id, email)
                 return data
             else:
                 if User.objects.filter(email=email.lower()).exists():
@@ -133,15 +136,18 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                     if age < 16:
                         raise serializers.ValidationError(
                             {'dob': _("You must be 16 or older to use Sean App")})
+                if 'profile_thumbnail' not in validated_data:
+                    profile_thumbnail = None
+                else:
+                    profile_thumbnail = validated_data['profile_thumbnail']
                 user = User.objects.create(username=username.lower(), social_id=social_id, email=email.lower(),
                                            account_type=account_type, profile_pic=validated_data['profile_pic'],
-                                           profile_thumbnail=validated_data['profile_thumbnail'], gender=gender, phone=phone,
+                                           profile_thumbnail=profile_thumbnail, gender=gender, phone=phone,
                                            dob=dob, bio=bio, create_profile=True)
                 user.save()
             if not DeviceRegistration.objects.filter(user=user).exists():
                 DeviceRegistration.objects.create(user=user, registration_id=device_id)
         return user
-
 
 
 class CreateUserProfileSerializer(serializers.ModelSerializer):
@@ -246,15 +252,17 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
         if email:
             if not User.objects.filter(email=email.lower()).exists():
                 raise serializers.ValidationError({'error': _('Email does not exist')})
-            if User.objects.filter(email=email.lower(), account_type="Instagram").exists()\
+            if User.objects.filter(email=email.lower(), account_type="Instagram").exists() \
                     or User.objects.filter(email=email.lower(), account_type="Apple").exists():
-                raise serializers.ValidationError({'error': _('You can not reset password because you are Social User')})
+                raise serializers.ValidationError(
+                    {'error': _('You can not reset password because you are Social User')})
         if phone:
             if not User.objects.filter(phone=phone).exists():
                 raise serializers.ValidationError({'error': _('Phone does not exist')})
-            if User.objects.filter(phone=phone, account_type="Instagram").exists()\
+            if User.objects.filter(phone=phone, account_type="Instagram").exists() \
                     or User.objects.filter(phone=phone, account_type="Apple").exists():
-                raise serializers.ValidationError({'error': _('You can not reset password because you are Social User')})
+                raise serializers.ValidationError(
+                    {'error': _('You can not reset password because you are Social User')})
         return attrs
 
 
@@ -294,6 +302,7 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
     def validate_password(data):
         validators.validate_password(password=data, user=User)
         return data
+
     def validate(self, attrs):
         password = attrs.get('password')
         confirm_password = attrs.get('confirm_password')
@@ -373,6 +382,7 @@ class UsersProfileSerializer(serializers.ModelSerializer):
             return True
         else:
             return False
+
 
 class SocialProfileExistSerializer(serializers.Serializer):
     social_id = serializers.CharField(required=True)

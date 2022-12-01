@@ -140,6 +140,12 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                     profile_thumbnail = None
                 else:
                     profile_thumbnail = validated_data['profile_thumbnail']
+
+                if 'profile_pic' not in validated_data:
+                    raise serializers.ValidationError({'profile_pic': [
+                        "The submitted data was not a file. Check the encoding type on the form."
+                    ]})
+
                 user = User.objects.create(username=username.lower(), social_id=social_id, email=email.lower(),
                                            account_type=account_type, profile_pic=validated_data['profile_pic'],
                                            profile_thumbnail=profile_thumbnail, gender=gender, phone=phone,

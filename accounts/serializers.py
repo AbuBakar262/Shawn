@@ -141,7 +141,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
 class CreateUserProfileSerializer(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True)
     profile_pic = serializers.FileField(validators=[image_validator], required=True)
-    profile_thumbnail = serializers.FileField(validators=[image_validator], required=True)
+    profile_thumbnail = serializers.FileField(validators=[image_validator], required=False)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     phone = serializers.CharField(required=True)
     dob = serializers.DateField(required=True)

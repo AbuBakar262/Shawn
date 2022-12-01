@@ -127,10 +127,16 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                 if User.objects.filter(social_id=social_id).exists():
                     message = ['social_id already exists']
                     raise serializers.ValidationError({'social_id': message})
+                dob = validated_data['dob']
+                if dob:
+                    age = relativedelta(date.today(), dob).years
+                    if age < 16:
+                        raise serializers.ValidationError(
+                            {'dob': _("You must be 16 or older to use Sean App")})
                 user = User.objects.create(username=username.lower(), social_id=social_id, email=email.lower(),
                                            account_type=account_type, profile_pic=validated_data['profile_pic'],
                                            profile_thumbnail=validated_data['profile_thumbnail'], gender=gender, phone=phone,
-                                           dob=validated_data['dob'], bio=bio, create_profile=True)
+                                           dob=dob, bio=bio, create_profile=True)
                 user.save()
             if not DeviceRegistration.objects.filter(user=user).exists():
                 DeviceRegistration.objects.create(user=user, registration_id=device_id)

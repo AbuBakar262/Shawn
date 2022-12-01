@@ -186,7 +186,7 @@ class SocialProfileSerializer(serializers.ModelSerializer):
 
 class SigninSerializer(serializers.ModelSerializer):
     email = serializers.CharField(required=False)
-    username = serializers.CharField(required=False)
+    # username = serializers.CharField(required=False)
     password = serializers.CharField(
         max_length=128,
         label='Password',
@@ -204,17 +204,12 @@ class SigninSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         email = attrs.get('email')
-        username = attrs.get('username')
+        # username = attrs.get('username')
         password = attrs.get('password')
         device_id = attrs.get('device_id')
-        if email is None and username is None:
-            raise serializers.ValidationError({'error': _('Email or Username is required, Please enter one of them')})
-        if username:
-            if User.objects.filter(username=username.lower()).exists():
-                user_email = User.objects.filter(username=username.lower()).first().email
-                user = authenticate(email=user_email.lower(), password=password)
-            else:
-                raise serializers.ValidationError({'error': _('Invalid credentials')})
+        if User.objects.filter(username=email.lower()).exists():
+            user_email = User.objects.filter(username=email.lower()).first().email
+            user = authenticate(email=user_email.lower(), password=password)
         else:
             user = authenticate(email=email.lower(), password=password)
         if not user:

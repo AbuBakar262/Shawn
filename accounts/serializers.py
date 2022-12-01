@@ -130,6 +130,9 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                 if User.objects.filter(social_id=social_id).exists():
                     message = ['social_id already exists']
                     raise serializers.ValidationError({'social_id': message})
+                if User.objects.filter(phone=phone).exists():
+                    message = ['Phone already exists']
+                    raise serializers.ValidationError({'phone': message})
                 dob = validated_data['dob']
                 if dob:
                     age = relativedelta(date.today(), dob).years

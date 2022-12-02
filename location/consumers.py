@@ -126,7 +126,9 @@ class LiveTrackingConsumer(AsyncWebsocketConsumer):
         print("received")
         latitude = text_data_json['latitude']
         longitude = text_data_json['longitude']
+        print("before function")
         update_location(latitude, longitude, self.scope)
+        print("after function")
         # Send message to room group
         await self.channel_layer.group_send(
             self.room_group_name,

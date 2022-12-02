@@ -157,7 +157,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     return Response(data={
                         "statusCode": 400, "error": False,
                         "message": otp,
-                        "data": {}
+                        "data": {"error": ["Phone OTP not sent!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)
                 user_serializer = UserSerializer(user)
                 return Response(data={
@@ -174,7 +174,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     return Response(data={
                         "statusCode": 400, "error": False,
                         "message": otp,
-                        "data": {}
+                        "data": {"error": ["Email OTP not sent!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)
                 user_serializer = UserSerializer(user)
                 return Response(data={

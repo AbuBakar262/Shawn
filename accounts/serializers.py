@@ -377,13 +377,20 @@ class BlockUserSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'create_profile', 'social_id', 'is_account', 'profile_pic',
                   'profile_thumbnail', 'gender', 'phone', 'dob', 'bio', 'email_verified', 'phone_verified',
                   'account_type']
 
-
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        user_friend = Friend.objects.filter(user=instance).values_list("friend_id", flat=True)
+        friend_user = Friend.objects.filter(friend=instance).values_list("user_id", flat=True)
+        friends_list = list(user_friend) + (list(friend_user))
+        data['friend_list'] = friends_list
+        return data
 class UserProfileStatusSerializer(serializers.ModelSerializer):
     is_account = serializers.ChoiceField(choices=ACCOUNT_CHOICE, required=True)
 

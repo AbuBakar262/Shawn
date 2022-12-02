@@ -29,7 +29,7 @@ def get_mongodb_database():
 #     # Printing the result
 #     return my_dist
 
-def update_location(user, latitude, longitude):
+def update_location(latitude, longitude, user):
     try:
         user_id = user.id
         profile_thumbnail = user.profile_thumbnail.url

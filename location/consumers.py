@@ -1,9 +1,9 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from sean_backend.settings import MONGODB_CONNECTING_STRING, MONGODB_NAME
+from pymongo import MongoClient, GEO2D
 
 def get_mongodb_database():
-    from sean_backend.settings import MONGODB_CONNECTING_STRING, MONGODB_NAME
-    from pymongo import MongoClient, GEO2D
     # Provide the mongodb atlas url to connect python to mongodb using pymongo
     CONNECTION_STRING = MONGODB_CONNECTING_STRING
 
@@ -12,87 +12,39 @@ def get_mongodb_database():
 
     # Create the database for our example (we will use the same database throughout the tutorial
     return client[MONGODB_NAME]
-def update_location(latitude, longitude, user):
 
-    print("start function")
-    # try:
-        ##############################
 
-    # from rest_framework.response import Response
-    # from rest_framework_simplejwt.tokens import AccessToken
-    # from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-    # from jwt import decode as jwt_decode
-    # from django.conf import settings
-
-    # user_token = dict(user_scope['headers'])[b'token'].decode("utf8")
-    # user_scope["query_string"] = "token=" + user_token
-    #
-    # token = user_token
-    #
-    # # Try to authenticate the user
-    # try:
-    #     # This will automatically validate the token and raise an error if token is invalid
-    #     AccessToken(token)
-    # except (InvalidToken, TokenError) as e:
-    #     # Token is invalid
-    #     return None
-    # else:
-    #     #  Then token is valid, decode it
-    #     decoded_data = jwt_decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-    #
-    #     user = decoded_data["user_id"]
-    #     user_scope['user'] = user
-    #     print("==============user_id", user)
-    ##############################
-    from accounts.models import User
-    if User.objects.filter(id=user).exists():
-        from friends_management.models import Friend
-        from pymongo import GEO2D
-        user_data = User.objects.filter(id=user).first()
-        if user_data.profile_thumbnail:
-            profile_thumbnail = user_data.profile_thumbnail.url
-        else:
-            profile_thumbnail = ""
-        user_friend = Friend.objects.filter(user_id=user_data.id).values_list("friend_id", flat=True)
-        friend_user = Friend.objects.filter(friend_id=user_data.id).values_list("user_id", flat=True)
-        friends_list = list(user_friend) + (list(friend_user))
-        latitude = latitude
-        longitude = longitude
-        dbname = get_mongodb_database()
-        collection_name = dbname["TestCollection"]
-        list_index_check = list(collection_name.list_indexes())
-        if len(list_index_check) == 0:
+def update_location(user_id, latitude, longitude, profile_thumbnail, friends_list):
+    dbname = get_mongodb_database()
+    collection_name = dbname["TestCollection"]
+    list_index_check = list(collection_name.list_indexes())
+    if len(list_index_check) == 0:
+        collection_name.create_index([("TestCollection", GEO2D)])
+    index_check = collection_name.index_information()
+    if index_check:
+        get_index = index_check.get('TestCollection_2d')
+        if get_index is None:
             collection_name.create_index([("TestCollection", GEO2D)])
-        index_check = collection_name.index_information()
-        if index_check:
-            get_index = index_check.get('TestCollection_2d')
-            if get_index is None:
-                collection_name.create_index([("TestCollection", GEO2D)])
+    user_id = user_id
+    profile_thumbnail = profile_thumbnail
+    friends_list = friends_list
+    latitude = latitude
+    longitude = longitude
 
-        user_found = collection_name.find({"user_id": user})
-        user_in_db = list(user_found)
-        print("============== before if condition")
-        if len(user_in_db) == 0:
-            collection_name.insert_one({"user_id": user, "profile_thumbnail": profile_thumbnail,
-                                        "friend_ids": friends_list,
-                                        "location": [float(latitude), float(longitude)]})
-        else:
-            print("before query")
-            myquery = user_in_db[0]
-            new_values = {"$set": {"user_id": user, "profile_thumbnail": profile_thumbnail,
-                                   "friend_ids": friends_list,
-                                   "location": [float(latitude), float(longitude)]}}
-            result = collection_name.update_one(myquery, new_values)
-            print("after query")
-            print("done", result.acknowledged)
-            print("end function")
-
+    user_found = collection_name.find({"user_id": user_id})
+    user_in_db = list(user_found)
+    if len(user_in_db) == 0:
+        collection_name.insert_one({"user_id": user_id, "profile_thumbnail": profile_thumbnail,
+                                    "friend_ids": friends_list,
+                                    "location": [float(latitude), float(longitude)]})
     else:
-        print("============== main if not working")
+        print("before query")
+        myquery = user_in_db[0]
+        new_values = {"$set": {"profile_thumbnail": profile_thumbnail,
+                               "friend_ids": friends_list,
+                               "location": [float(latitude), float(longitude)]}}
+        collection_name.update_one(myquery, new_values)
 
-    # except Exception as e:
-    #     error = {"status": False, "message": e.args[0]}
-    #     return Response(error)
 
 class LiveTrackingConsumer(AsyncWebsocketConsumer):
     # permission_classes = [IsAuthenticated]
@@ -130,17 +82,11 @@ class LiveTrackingConsumer(AsyncWebsocketConsumer):
     # Receive message from WebSocket
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        print("received")
-        latitude = text_data_json['latitude']
-        longitude = text_data_json['longitude']
-        print("before function")
-        user_scope = self.scope
         if text_data_json.get("user_id"):
-            user = text_data_json.get("user_id")
-            update_location(latitude, longitude, user)
-
-        # update_location(latitude, longitude, user_scope)
-        print("after function")
+            # update_location(text_data_json)
+            location = text_data_json
+            update_location(location.get('user_id'), location.get('latitude'), location.get('longitude'),
+                            location.get('profile_thumbnail'), location.get('friends_list'), )
         # Send message to room group
         await self.channel_layer.group_send(
             self.room_group_name,

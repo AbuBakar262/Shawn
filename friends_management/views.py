@@ -33,9 +33,15 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                      "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
         serializer.save(user=user)
+        friend = serializer.data.get("friend")
+        registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
+        notification(device_id=registration_id, title="Friend", body="{} is now your friend".format(user.username))
+        receiver = User.objects.filter(id=friend).first()
+        Notification.objects.create(sender=user, receiver=receiver, type="Add Friend")
         response = {"statusCode": 200, "error": False, "message": "Friend Added Successfully!",
                     "data": serializer.data}
         return Response(response, status=status.HTTP_201_CREATED)
+
     def list(self, request, *args, **kwargs):
         try:
             user = request.user
@@ -110,9 +116,11 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             user = request.user
             friend = request.data.get("friend_request")
-            friend_request = Notification.objects.create(sender=user, receiver=friend, type="Send Request")
+            receiver = User.objects.filter(id=friend).first()
+            friend_request = Notification.objects.create(sender=user, receiver=receiver, type="Send Request")
             registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
-            notification(device_id=registration_id, title="Friend Request", body="{} sent you friend request".format(user.username))
+            notification(device_id=registration_id, title="Friend Request", body="{} sent you friend request".
+                         format(user.username))
             return Response(
                 data={
                     "status": "success",
@@ -128,8 +136,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             return Response(data={
-                "status": "error",
-                "status_code": status.HTTP_400_BAD_REQUEST,
+                "statusCode": 400, "error": True,
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -155,30 +162,24 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                              body="{} is now your friend".format(friend_request.receiver.username))
                 friend_request.delete()
                 return Response(data={
-                    "status": True,
-                    "status_code": status.HTTP_200_OK,
-                    "message": "Friend request accepted"
+                    "statusCode": 200, "error": False,
+                    "message": "Friend request accepted",
+                    "data": {}
                 }, status=status.HTTP_200_OK)
-            elif status_type == 'Rejected':
+            else:
                 RejectRequest.objects.create(user=friend_request.sender,
                                              rejected_user=friend_request.receiver)
                 friend_request.delete()
                 return Response(data={
-                    "status": True,
-                    "status_code": status.HTTP_200_OK,
-                    "message": "Friend request rejected"
+                    "statusCode": 200, "error": False,
+                    "message": "Friend request rejected",
+                    "data": {}
                 }, status=status.HTTP_200_OK)
-            else:
-                return Response(data={
-                    "status": False,
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "Invalid status"
-                }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(data={
-                "status": False,
-                "status_code": status.HTTP_400_BAD_REQUEST,
-                "message": str(e)
+                "statusCode": 400, "error": True,
+                "message": str(e),
+                "data": {}
             }, status=status.HTTP_400_BAD_REQUEST)
 
     def friend_request_delete(self, request, *args, **kwargs):
@@ -221,7 +222,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
 
     def unfriend(self, request, *args, **kwargs):
         try:
-            serializer = UnFriendSerializer(data=request.data)
+            serializer = UnFriendSerializer(data=request.data, context={"request": request})
             try:
                 serializer.is_valid(raise_exception=True)
             except Exception as e:
@@ -234,11 +235,12 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 Friend.objects.filter(Q(user=user, friend=friend) | Q(user=friend, friend=user)).delete()
                 return Response(data={
                     "statusCode": 200, "error": False,
-                    "message": "UnFriend successfully"
+                    "message": "UnFriend successfully",
+                    "data": {}
                 }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={
-                "status": "error",
-                "status_code": status.HTTP_400_BAD_REQUEST,
-                "message": str(e)
+                "statusCode": 400, "error": True,
+                "message": str(e),
+                "data": {}
             }, status=status.HTTP_400_BAD_REQUEST)

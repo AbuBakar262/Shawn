@@ -3,7 +3,7 @@ from notification.serializers import *
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 
 # Create your views here.
@@ -28,7 +28,7 @@ class DeviceRegistrationViewSet(viewsets.ModelViewSet):
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset = DeviceRegistration.objects.all()
     serializer_class = DeviceRegistrationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
         try:

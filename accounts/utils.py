@@ -69,10 +69,10 @@ def delete_image(profile, profile_thumb):
                           aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     bucket = AWS_STORAGE_BUCKET_NAME
     key = profile.name
-    key_thumb = profile_thumb.name
     if profile:
         client.delete_object(Bucket=bucket, Key=key)
     if profile_thumb:
+        key_thumb = profile_thumb.name
         client.delete_object(Bucket=bucket, Key=key_thumb)
         return True
     else:

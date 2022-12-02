@@ -322,12 +322,13 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
-    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False)
-    phone = serializers.CharField(required=False)
-    dob = serializers.DateField(required=False)
-    bio = serializers.CharField(required=False)
-    profile_pic = serializers.FileField(required=False)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
+    phone = serializers.CharField(required=True)
+    dob = serializers.DateField(required=True)
+    bio = serializers.CharField(required=True)
+    profile_pic = serializers.FileField(required=True)
     profile_thumbnail = serializers.FileField(required=False)
+    social_id = serializers.CharField(required=False)
 
     class Meta:
         model = User
@@ -339,21 +340,28 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         phone = attrs.get('phone')
         dob = attrs.get('dob')
         profile_pic = attrs.get('profile_pic')
-        profile_thumbnail = attrs.get('profile_thumbnail')
-        user = self.context['request'].user
-        if User.objects.filter(phone=phone).exclude(id=user.id).exists():
-            raise serializers.ValidationError({'phone': _('phone already exists')})
-        profile = User.objects.filter(id=user.id).first().profile_pic
-        profile_thumb = User.objects.filter(id=user.id).first().profile_thumbnail
-        profile_data = profile.name.split("profile_photos/")[1] == profile_pic
-        profile_thumb_data = profile_thumb.name.split("profile_thumbnails/")[1] == profile_thumbnail
-        if profile_data == False and profile_thumb_data == False:
-            delete_image(profile=profile, profile_thumb=profile_thumb)
         if dob:
             age = relativedelta(date.today(), dob).years
             if age < 16:
                 raise serializers.ValidationError(
                     {'dob': _("You must be 16 or older to use Sean App")})
+        user = self.context['request'].user
+        if User.objects.filter(phone=phone, create_profile=True).exclude(id=user.id).exists():
+            raise serializers.ValidationError({'phone': _('phone already exis   ts')})
+        profile = User.objects.filter(id=user.id).first().profile_pic
+        user_profile_img = profile.name.split("profile_photos/")[1]
+        if not profile_pic.name == user_profile_img:
+            profile_thumbnail = attrs.get('profile_thumbnail')
+            delete_image(profile_pic, profile_thumbnail)
+
+        # if attrs.get('profile_thumbnail'):
+        #     profile_thumbnail = attrs.get('profile_thumbnail')
+        #     profile_thumb = User.objects.filter(id=user.id).first().profile_thumbnail
+
+        # profile_thumb_data = profile_thumb.name.split("profile_thumbnails/")[1]
+        # if profile_data == False and profile_thumb_data == False:
+        #     delete_image(profile=profile, profile_thumb=profile_thumb)
+
         return attrs
 
 

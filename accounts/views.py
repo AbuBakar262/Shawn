@@ -155,7 +155,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 otp = send_otp_phone(user.phone)
                 if otp != 'sent':
                     return Response(data={
-                        "statusCode": 400, "error": False,
+                        "statusCode": 400, "error": True,
                         "message": otp,
                         "data": {"error": ["Phone OTP not sent!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)
@@ -172,7 +172,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 otp = send_otp_email(user.email)
                 if otp != 'sent':
                     return Response(data={
-                        "statusCode": 400, "error": False,
+                        "statusCode": 400, "error": True,
                         "message": otp,
                         "data": {"error": ["Email OTP not sent!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)

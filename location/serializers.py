@@ -13,6 +13,13 @@ class UserLocationSerializer(serializers.ModelSerializer):
         model = FavouriteLocation
         fields = ['id', 'user', 'latitude', 'longitude', 'address', 'created_at', 'updated_at']
 
+    def validate(self, attrs):
+        latitude = attrs.get("latitude")
+        longitude = attrs.get("longitude")
+        if FavouriteLocation.objects.filter(latitude=latitude, longitude=longitude).exists():
+            raise serializers.ValidationError({'error': _('You already save this location')})
+        return attrs
+
 
 class UserLocationListSerializer(serializers.ModelSerializer):
     total = serializers.SerializerMethodField()

@@ -11,8 +11,7 @@ class AddFriendSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Friend
-        fields = ['id', 'sender', 'receiver', 'username', 'profile_thumbnail', 'message_title', 'message_body', 'type',
-                  'read_status', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'friend']
 
     def validate(self, attrs):
         if Friend.objects.filter(user=self.context['request'].user, friend=attrs.get("friend")).exists() \
@@ -52,7 +51,7 @@ class FriendRequestActionSerializer(serializers.Serializer):
             raise serializers.ValidationError({'error': _('You are not the receiver of this friend request.')})
         if friend_request_sender != friend_request.sender:
             raise serializers.ValidationError({'error': _('This is not your friend request.')})
-        if Notification.objects.filter(id=friend_request.id, sender=friend_request_sender).exists():
+        if not Notification.objects.filter(id=friend_request.id, sender=friend_request_sender).exists():
             raise serializers.ValidationError({'error': 'Friend request not exists!'})
         return attrs
 
@@ -89,5 +88,13 @@ class FriendRequestSerializer(serializers.Serializer):
 class FriendRequestDeleteSerializer(serializers.Serializer):
     friend_request_id = serializers.SlugRelatedField(queryset=Notification.objects.all(), slug_field='id', required=True)
 
+
 class UnFriendSerializer(serializers.Serializer):
     friend = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='id', required=True)
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        friend = attrs.get("friend")
+        if not Friend.objects.filter(Q(user=user, friend=friend) | Q(user=friend, friend=user)).exists():
+            raise serializers.ValidationError({'error': _('Friend does not exist!')})
+        return attrs

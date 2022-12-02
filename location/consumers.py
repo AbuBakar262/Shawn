@@ -12,37 +12,37 @@ def get_mongodb_database():
 
     # Create the database for our example (we will use the same database throughout the tutorial
     return client[MONGODB_NAME]
-def update_location(latitude, longitude, user_scope):
+def update_location(latitude, longitude, user):
 
     print("start function")
     # try:
         ##############################
 
     # from rest_framework.response import Response
-    from rest_framework_simplejwt.tokens import AccessToken
-    from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-    from jwt import decode as jwt_decode
-    from django.conf import settings
+    # from rest_framework_simplejwt.tokens import AccessToken
+    # from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+    # from jwt import decode as jwt_decode
+    # from django.conf import settings
 
-    user_token = dict(user_scope['headers'])[b'token'].decode("utf8")
-    user_scope["query_string"] = "token=" + user_token
-
-    token = user_token
-
-    # Try to authenticate the user
-    try:
-        # This will automatically validate the token and raise an error if token is invalid
-        AccessToken(token)
-    except (InvalidToken, TokenError) as e:
-        # Token is invalid
-        return None
-    else:
-        #  Then token is valid, decode it
-        decoded_data = jwt_decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-
-        user = decoded_data["user_id"]
-        user_scope['user'] = user
-        print("==============user_id", user)
+    # user_token = dict(user_scope['headers'])[b'token'].decode("utf8")
+    # user_scope["query_string"] = "token=" + user_token
+    #
+    # token = user_token
+    #
+    # # Try to authenticate the user
+    # try:
+    #     # This will automatically validate the token and raise an error if token is invalid
+    #     AccessToken(token)
+    # except (InvalidToken, TokenError) as e:
+    #     # Token is invalid
+    #     return None
+    # else:
+    #     #  Then token is valid, decode it
+    #     decoded_data = jwt_decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+    #
+    #     user = decoded_data["user_id"]
+    #     user_scope['user'] = user
+    #     print("==============user_id", user)
     ##############################
     from accounts.models import User
     if User.objects.filter(id=user).exists():
@@ -135,7 +135,11 @@ class LiveTrackingConsumer(AsyncWebsocketConsumer):
         longitude = text_data_json['longitude']
         print("before function")
         user_scope = self.scope
-        update_location(latitude, longitude, user_scope)
+        if text_data_json.get("user_id"):
+            user = text_data_json.get("user_id")
+            update_location(latitude, longitude, user)
+
+        # update_location(latitude, longitude, user_scope)
         print("after function")
         # Send message to room group
         await self.channel_layer.group_send(

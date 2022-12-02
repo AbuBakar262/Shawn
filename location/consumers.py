@@ -76,7 +76,9 @@ def update_location(latitude, longitude, scope):
                 new_values = {"$set": {"user_id": user, "profile_thumbnail": profile_thumbnail,
                                        "friend_ids": friends_list,
                                        "location": [float(latitude), float(longitude)]}}
-                collection_name.update_one(myquery, new_values)
+                result = collection_name.update_one(myquery, new_values)
+                print("done", result.acknowledged)
+
     except Exception as e:
         error = {"status": False, "message": e.args[0]}
         return Response(error)

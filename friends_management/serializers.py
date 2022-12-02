@@ -6,6 +6,21 @@ from django.utils.translation import gettext_lazy as _
 from notification.models import *
 
 
+class AddFriendSerializer(serializers.ModelSerializer):
+    friend = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='id', required=True)
+
+    class Meta:
+        model = Friend
+        fields = ['id', 'sender', 'receiver', 'username', 'profile_thumbnail', 'message_title', 'message_body', 'type',
+                  'read_status', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        if Friend.objects.filter(user=self.context['request'].user, friend=attrs.get("friend")).exists() \
+                or Friend.objects.filter(user=self.context['request'].user, friend=attrs.get("friend")).exists():
+            raise serializers.ValidationError({'error': _('you are already friends.')})
+        return attrs
+
+
 class FriendRequestListSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="sender.username")
     profile_thumbnail = serializers.FileField(source="sender.profile_thumbnail")
@@ -64,12 +79,15 @@ class FriendRequestSerializer(serializers.Serializer):
     def validate(self, attrs):
         friend_request = attrs.get("friend_request")
         if Notification.objects.filter(sender=self.context['request'].user, receiver=friend_request).exists():
-            raise serializers.ValidationError({'user': _('Friend request already sent')})
+            raise serializers.ValidationError({'error': _('Friend request already sent')})
         if Friend.objects.filter(user=self.context['request'].user, friend=friend_request).exists():
-            raise serializers.ValidationError({'user': _('You are already friends!')})
+            raise serializers.ValidationError({'error': _('You are already friends!')})
+        if friend_request.is_account == "Public":
+            raise serializers.ValidationError({'error': _('You can not send Request on Public Profile!')})
+        return attrs
 
 class FriendRequestDeleteSerializer(serializers.Serializer):
     friend_request_id = serializers.SlugRelatedField(queryset=Notification.objects.all(), slug_field='id', required=True)
 
-class FriendDeleteSerializer(serializers.Serializer):
-    friend_id = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='id', required=True)
+class UnFriendSerializer(serializers.Serializer):
+    friend = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='id', required=True)

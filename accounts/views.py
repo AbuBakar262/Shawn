@@ -284,11 +284,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
             user_id = self.request.query_params.get('id')
             if user_id:
                 if not User.objects.filter(id=user_id).exists():
-                    response = {"statusCode": 200, "error": False,
-                                "message": "User profile matching query does not exist!",
+                    response = {"statusCode": 404, "error": False,
+                                "message": "User not found!",
                                 "data": {
+                                    "error": ["User not found!"]
                                 }}
-                    return Response(data=response, status=status.HTTP_200_OK)
+                    return Response(data=response, status=status.HTTP_404_NOT_FOUND)
                 user_serializer = UsersProfileSerializer(User.objects.get(id=user_id))
                 response = {"statusCode": 200, "error": False,
                             "message": "User profile fetched successfully",

@@ -52,7 +52,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(data={
                 "statusCode": 404, "error": True,
                 "message": "User not found",
-                "data": {"error": [error]}
+                "errors": {"error": [error]}
             }, status=status.HTTP_404_NOT_FOUND)
         instance = self.get_object()
         serializer = CreateUserProfileSerializer(instance, data=request.data, partial=partial,
@@ -157,7 +157,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     return Response(data={
                         "statusCode": 400, "error": True,
                         "message": otp,
-                        "data": {"error": ["Phone OTP not sent!"]}
+                        "errors": {"error": ["Phone OTP not sent!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)
                 user_serializer = UserSerializer(user)
                 return Response(data={
@@ -174,7 +174,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     return Response(data={
                         "statusCode": 400, "error": True,
                         "message": otp,
-                        "data": {"error": ["Email OTP not sent!"]}
+                        "errors": {"error": ["Email OTP not sent!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)
                 user_serializer = UserSerializer(user)
                 return Response(data={
@@ -206,7 +206,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     return Response(data={
                         "statusCode": 400, "error": True,
                         "message": phone_otp,
-                        "data": {"error": ["phone otp is not verified!"]}
+                        "errors": {"error": ["phone otp is not verified!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)
             else:
                 email_otp = verify_otp_email(user.email, otp)
@@ -214,7 +214,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     return Response(data={
                         "statusCode": 400, "error": True,
                         "message": email_otp,
-                        "data": {"error": ["email otp is not verified!"]}
+                        "errors": {"error": ["email otp is not verified!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)
             user_serializer = UserSerializer(user)
             return Response(data={

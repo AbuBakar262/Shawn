@@ -1,12 +1,15 @@
 # from channels.auth import AuthMiddlewareStack
 from django.db import close_old_connections
-from rest_framework_simplejwt.tokens import UntypedToken
+from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from jwt import decode as jwt_decode
 from django.conf import settings
+# settings.configure()
 # from django.contrib.auth import get_user_model
 from accounts.models import User
 from urllib.parse import parse_qs
+
+
 # from asgiref.sync import sync_to_async
 
 class TokenAuthMiddleware:
@@ -34,7 +37,7 @@ class TokenAuthMiddleware:
         # Try to authenticate the user
         try:
             # This will automatically validate the token and raise an error if token is invalid
-            UntypedToken(token)
+            AccessToken(token)
         except (InvalidToken, TokenError) as e:
             # Token is invalid
             print(e)

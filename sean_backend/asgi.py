@@ -9,14 +9,16 @@
 #
 import os
 
+# from channels.routing import ProtocolTypeRouter, URLRouter
+# from django.core.asgi import get_asgi_application
+# import location.routing
+# from sean_backend.channelsmiddleware import TokenAuthMiddleware
+
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 from channels.auth import AuthMiddlewareStack
 import location.routing
 from channels.security.websocket import AllowedHostsOriginValidator
-
-from sean_backend.channelsmiddleware import TokenAuthMiddleware
-
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sean_backend.settings')
 
 # application = get_asgi_application()
@@ -30,11 +32,24 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sean_backend.settings')
 #         )
 #     }
 # )
+# application = ProtocolTypeRouter({
+#   "http": get_asgi_application(),
+#   "websocket": TokenAuthMiddleware(
+#         URLRouter(
+#             location.routing.websocket_urlpatterns
+#         )
+#     ),
+# })
+
+
+
 application = ProtocolTypeRouter({
   "http": get_asgi_application(),
-  "websocket": TokenAuthMiddleware(
-        URLRouter(
-            location.routing.websocket_urlpatterns
+  "websocket": AllowedHostsOriginValidator(
+        AuthMiddlewareStack(
+            URLRouter(
+                location.routing.websocket_urlpatterns
+            )
         )
     ),
 })

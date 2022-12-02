@@ -14,17 +14,16 @@ def get_mongodb_database():
     return client[MONGODB_NAME]
 def update_location(latitude, longitude, user_scope):
     print("start function")
-    from pymongo import  GEO2D
-    from rest_framework.response import Response
-    from friends_management.models import Friend
-    from rest_framework_simplejwt.tokens import AccessToken
-    from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-    from jwt import decode as jwt_decode
-    from django.conf import settings
-    from accounts.models import User
-
     try:
         ###############################
+        from pymongo import GEO2D
+        from rest_framework.response import Response
+        from friends_management.models import Friend
+        from rest_framework_simplejwt.tokens import AccessToken
+        from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+        from jwt import decode as jwt_decode
+        from django.conf import settings
+        from accounts.models import User
         user_token = dict(user_scope['headers'])[b'token'].decode("utf8")
         user_scope["query_string"] = "token=" + user_token
 

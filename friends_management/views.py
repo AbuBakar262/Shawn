@@ -1,3 +1,5 @@
+import json
+
 from django.db.models import Q
 from accounts.models import *
 from accounts.serializers import UserProfileSerializer
@@ -7,6 +9,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from notification.models import *
+
+from location.utils import get_mongodb_database
+# from notification.models import DeviceRegistration
 from sean_backend.utils import notification
 
 
@@ -54,14 +59,13 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
     def all_user_list(self, request, *args, **kwargs):
         try:
             user = request.user
-            user_block_to = BlockUser.objects.filter(user=user).values_list("block_user", flat=True)
-            user_block_by = BlockUser.objects.filter(block_user=user).values_list("user", flat=True)
-            all_user = User.objects.exclude(id=user.id).exclude(is_superuser=True). \
-                exclude(id__in=user_block_to).exclude(id__in=user_block_by).exclude(create_profile=False)
-            serializer = FriendSerializer(all_user, many=True)
+            dbname = get_mongodb_database()
+            collection_name = dbname["TestCollection"]
+            user_found = list(collection_name.find({},{'_id':0}).skip(user.id))
             return Response({
-                "statusCode": 200, "error": False, "message": "All User List",
-                "data": serializer.data, "total": all_user.count()
+                "statusCode": 200, "error": False, "message": "All Users List",
+                "data": user_found,
+                "found_people": len(user_found)
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({
@@ -109,10 +113,10 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             #     }, status=status.HTTP_400_BAD_REQUEST)
             if friend.is_account == "Public":
                 Friend.objects.create(user=user, friend=friend)
-                friend_request = Notification.objects.create(sender=user, receiver=friend, type="Add Friend")
                 registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
                 notification(device_id=registration_id, title="Friend",
                              body="{} is now your friend".format(user.username))
+                friend_request = Notification.objects.filter(sender=user, receiver=friend).first()
                 return Response(data={
                     "status": "success",
                     "status_code": status.HTTP_200_OK,
@@ -271,17 +275,27 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
     def friend_list(self, request, *args, **kwargs):
         try:
             user = request.user
-            user_friend = Friend.objects.filter(user=user).values_list("friend", flat=True)
-            friend_user = Friend.objects.filter(friend=user).values_list("user", flat=True)
-            total = user_friend.count() + friend_user.count()
-            users = User.objects.filter(Q(id__in=user_friend) | Q(id__in=friend_user))
-            serializer = FriendSerializer(users, many=True)
+            dbname = get_mongodb_database()
+            collection_name = dbname["TestCollection"]
+            user_found = list(collection_name.find({"friend_ids": user.id}, {'_id':0}))
             return Response(data={
                 "statusCode": 200, "error": False,
-                "message": "Friend List fetched successfully",
-                "data": serializer.data,
-                "total": total
+                "message": "All Friends List",
+                "data": user_found,
+                "found_people": len(user_found)
             }, status=status.HTTP_200_OK)
+            # user = request.user
+            # user_friend = Friend.objects.filter(user=user).values_list("friend", flat=True)
+            # friend_user = Friend.objects.filter(friend=user).values_list("user", flat=True)
+            # total = user_friend.count() + friend_user.count()
+            # users = User.objects.filter(Q(id__in=user_friend) | Q(id__in=friend_user))
+            # serializer = FriendSerializer(users, many=True)
+            # return Response(data={
+            #     "statusCode": 200, "error": False,
+            #     "message": "Friend List fetched successfully",
+            #     "data": serializer.data,
+            #     "total": total
+            # }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={
                 "error": True,

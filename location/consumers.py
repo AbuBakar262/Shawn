@@ -68,6 +68,7 @@ def update_location(latitude, longitude, user_scope):
 
             user_found = collection_name.find({"user_id": user})
             user_in_db = list(user_found)
+            print("============== before if condition")
             if len(user_in_db) == 0:
                 collection_name.insert_one({"user_id": user, "profile_thumbnail": profile_thumbnail,
                                             "friend_ids": friends_list,
@@ -82,6 +83,9 @@ def update_location(latitude, longitude, user_scope):
                 print("after query")
                 print("done", result.acknowledged)
                 print("end function")
+
+        else:
+            print("============== main if not working")
 
     except Exception as e:
         error = {"status": False, "message": e.args[0]}

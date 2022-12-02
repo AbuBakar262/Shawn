@@ -13,6 +13,7 @@ def get_mongodb_database():
     # Create the database for our example (we will use the same database throughout the tutorial
     return client[MONGODB_NAME]
 def update_location(latitude, longitude, scope):
+    print("start function")
     from pymongo import  GEO2D
     from rest_framework.response import Response
     from friends_management.models import Friend
@@ -80,6 +81,7 @@ def update_location(latitude, longitude, scope):
                 result = collection_name.update_one(myquery, new_values)
                 print("after query")
                 print("done", result.acknowledged)
+                print("end function")
 
     except Exception as e:
         error = {"status": False, "message": e.args[0]}

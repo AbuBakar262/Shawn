@@ -12,7 +12,7 @@ def get_mongodb_database():
 
     # Create the database for our example (we will use the same database throughout the tutorial
     return client[MONGODB_NAME]
-def update_location(latitude, longitude, scope):
+def update_location(latitude, longitude, user_scope):
     print("start function")
     from pymongo import  GEO2D
     from rest_framework.response import Response
@@ -25,8 +25,8 @@ def update_location(latitude, longitude, scope):
 
     try:
         ###############################
-        user_token = dict(scope['headers'])[b'token'].decode("utf8")
-        scope["query_string"] = "token=" + user_token
+        user_token = dict(user_scope['headers'])[b'token'].decode("utf8")
+        user_scope["query_string"] = "token=" + user_token
 
         token = user_token
 
@@ -42,7 +42,7 @@ def update_location(latitude, longitude, scope):
             decoded_data = jwt_decode(token, settings.SECRET_KEY, algorithms=["HS256"])
 
             user = decoded_data["user_id"]
-            scope['user'] = user
+            user_scope['user'] = user
         ##############################
         if User.objects.filter(id=user).exists():
             user_data = User.objects.filter(id=user).first()
@@ -127,7 +127,8 @@ class LiveTrackingConsumer(AsyncWebsocketConsumer):
         latitude = text_data_json['latitude']
         longitude = text_data_json['longitude']
         print("before function")
-        update_location(latitude, longitude, self.scope)
+        user_scope = self.scope
+        update_location(latitude, longitude, user_scope)
         print("after function")
         # Send message to room group
         await self.channel_layer.group_send(

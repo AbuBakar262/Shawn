@@ -204,17 +204,17 @@ class UserViewSet(viewsets.ModelViewSet):
                 phone_otp = verify_otp_phone(user.phone, otp)
                 if phone_otp != 'approved':
                     return Response(data={
-                        "statusCode": 400, "error": False,
+                        "statusCode": 400, "error": True,
                         "message": phone_otp,
-                        "data": {}
+                        "data": {"error": ["phone otp is not verified!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)
             else:
                 email_otp = verify_otp_email(user.email, otp)
                 if email_otp != 'approved':
                     return Response(data={
-                        "statusCode": 400, "error": False,
+                        "statusCode": 400, "error": True,
                         "message": email_otp,
-                        "data": {}
+                        "data": {"error": ["email otp is not verified!"]}
                     }, status=status.HTTP_400_BAD_REQUEST)
             user_serializer = UserSerializer(user)
             return Response(data={

@@ -43,6 +43,7 @@ def update_location(latitude, longitude, user_scope):
 
             user = decoded_data["user_id"]
             user_scope['user'] = user
+            print("==============user_id", user)
         ##############################
         if User.objects.filter(id=user).exists():
             user_data = User.objects.filter(id=user).first()

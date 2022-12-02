@@ -72,11 +72,13 @@ def update_location(latitude, longitude, scope):
                                             "friend_ids": friends_list,
                                             "location": [float(latitude), float(longitude)]})
             else:
+                print("before query")
                 myquery = user_in_db[0]
                 new_values = {"$set": {"user_id": user, "profile_thumbnail": profile_thumbnail,
                                        "friend_ids": friends_list,
                                        "location": [float(latitude), float(longitude)]}}
                 result = collection_name.update_one(myquery, new_values)
+                print("after query")
                 print("done", result.acknowledged)
 
     except Exception as e:

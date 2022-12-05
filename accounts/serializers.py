@@ -350,9 +350,10 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'phone': _('phone already exis   ts')})
         profile = User.objects.filter(id=user.id).first().profile_pic
         user_profile_img = profile.name.split("profile_photos/")[1]
-        if not profile_pic.name == user_profile_img:
-            profile_thumbnail = attrs.get('profile_thumbnail')
-            delete_image(profile_pic, profile_thumbnail)
+        if profile_pic:
+            if not profile_pic.name == user_profile_img:
+                profile_thumbnail = attrs.get('profile_thumbnail')
+                delete_image(user_profile_img, profile_thumbnail)
 
         # if attrs.get('profile_thumbnail'):
         #     profile_thumbnail = attrs.get('profile_thumbnail')

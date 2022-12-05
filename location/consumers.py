@@ -124,13 +124,13 @@ def get_mongodb_database():
     CONNECTION_STRING = MONGODB_CONNECTING_STRING
 
     # Create a connection using MongoClient. You can import MongoClient or use pymongo.MongoClient
-    client = MongoClient(CONNECTION_STRING)
+    client = MongoClient('mongodb+srv://ali:123@cluster0.nkjzhzh.mongodb.net/?retryWrites=true&w=majority')
     print(client['TestDB'])
     # Create the database for our example (we will use the same database throughout the tutorial
     return client['TestDB']
 
 
-def update_location(user_id, latitude, longitude, profile_thumbnail):
+def update_location(user_id, latitude, longitude, profile_thumbnail, friends_list):
         latitude = latitude
         longitude = longitude
         dbname = get_mongodb_database()
@@ -147,11 +147,11 @@ def update_location(user_id, latitude, longitude, profile_thumbnail):
         driver_mongo = list(found)
         if len(driver_mongo) == 0:
             collection_name.insert_one(
-                {"user_id": user_id, "profile_thumbnail": profile_thumbnail,
+                {"user_id": user_id, "profile_thumbnail": profile_thumbnail, "friends_list":friends_list,
                  "location": [float(latitude), float(longitude)]})
         else:
             myquery = driver_mongo[0]
-            new_values = {"$set": {"profile_thumbnail": profile_thumbnail,
+            new_values = {"$set": {"profile_thumbnail": profile_thumbnail, "friends_list":friends_list,
                  "location": [float(latitude), float(longitude)]}}
             collection_name.update_one(myquery, new_values)
 
@@ -185,7 +185,7 @@ class LiveTrackingConsumer(AsyncWebsocketConsumer):
         if text_data_json.get('user_id'):
             location = text_data_json
             update_location(location.get('user_id'), location.get('latitude'),
-                            location.get('longitude'), location.get('profile_thumbnail'),)
+                            location.get('longitude'), location.get('profile_thumbnail'), location.get('friends_list'),)
         # Send message to room group
         await self.channel_layer.group_send(
             self.room_group_name,

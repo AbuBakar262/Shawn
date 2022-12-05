@@ -16,6 +16,12 @@ class PermissionsUtil:
         raise exceptions.PermissionDenied()
 
     @staticmethod
+    def current_user_permission(request, instance):
+        if request.user.is_superuser or instance == request.user:
+            return True
+        raise exceptions.PermissionDenied()
+
+    @staticmethod
     def destroy_permission(request, instance):
         if request.user.is_superuser or instance == request.user:
             return True

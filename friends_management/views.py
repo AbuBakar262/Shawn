@@ -47,7 +47,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             user = request.user
             dbname = get_mongodb_database()
             collection_name = dbname["SeanCollection"]
-            user_found = list(collection_name.find({"friend_ids": user.id}, {'_id': 0}))
+            user_found = list(collection_name.find({"friends_list": user.id}, {'_id': 0}))
             return Response(data={
                 "statusCode": 200, "error": False,
                 "message": "All Friends List",

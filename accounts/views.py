@@ -320,6 +320,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = request.user
+        PermissionsUtil.permission(request, instance)
         serializer = UserProfileUpdateSerializer(instance, data=request.data, partial=partial,
                                                  context={'request': request})
         try:

@@ -46,7 +46,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
         try:
             user = request.user
             dbname = get_mongodb_database()
-            collection_name = dbname["TestCollection"]
+            collection_name = dbname["SeanCollection"]
             user_found = list(collection_name.find({"friend_ids": user.id}, {'_id': 0}))
             return Response(data={
                 "statusCode": 200, "error": False,
@@ -92,7 +92,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
         try:
             user = request.user
             dbname = get_mongodb_database()
-            collection_name = dbname["TestCollection"]
+            collection_name = dbname["SeanCollection"]
             user_found = list(collection_name.find({},{'_id':0}))
             return Response({
                 "statusCode": 200, "error": False, "message": "All Users List",

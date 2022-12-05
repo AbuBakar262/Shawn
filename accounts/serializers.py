@@ -322,11 +322,11 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
-    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
-    phone = serializers.CharField(required=True)
-    dob = serializers.DateField(required=True)
-    bio = serializers.CharField(required=True)
-    profile_pic = serializers.FileField(required=True)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False)
+    phone = serializers.CharField(required=False)
+    dob = serializers.DateField(required=False)
+    bio = serializers.CharField(required=False)
+    profile_pic = serializers.FileField(required=False)
     profile_thumbnail = serializers.FileField(required=False)
     social_id = serializers.CharField(required=False)
 
@@ -347,7 +347,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
                     {'dob': _("You must be 16 or older to use Sean App")})
         user = self.context['request'].user
         if User.objects.filter(phone=phone, create_profile=True).exclude(id=user.id).exists():
-            raise serializers.ValidationError({'phone': _('phone already exis   ts')})
+            raise serializers.ValidationError({'phone': _('phone already exists')})
         profile = User.objects.filter(id=user.id).first().profile_pic
         user_profile_img = profile.name.split("profile_photos/")[1]
         if profile_pic:

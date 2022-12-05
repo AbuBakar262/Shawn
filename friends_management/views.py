@@ -93,7 +93,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             user = request.user
             dbname = get_mongodb_database()
             collection_name = dbname["TestCollection"]
-            user_found = list(collection_name.find({},{'_id':0}).skip(user.id))
+            user_found = list(collection_name.find({},{'_id':0}))
             return Response({
                 "statusCode": 200, "error": False, "message": "All Users List",
                 "data": user_found,

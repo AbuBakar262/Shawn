@@ -7,7 +7,7 @@ from rest_framework import serializers
 from accounts.models import User
 from notification.models import DeviceRegistration
 from sean_backend.settings import ACCOUNT_SID_TWILIO, AUTH_TOKEN_TWILIO, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, \
-    AWS_STORAGE_BUCKET_NAME
+    AWS_STORAGE_BUCKET_NAME, THUMBNAIL_LINK
 
 
 def random_string_generator():
@@ -64,16 +64,13 @@ def verify_otp_email(to, code):
         return e.msg
 
 
-def delete_image(profile, profile_thumb):
+def delete_image(profile):
     client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
                           aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     bucket = AWS_STORAGE_BUCKET_NAME
     key = profile
     if profile:
         client.delete_object(Bucket=bucket, Key=key)
-    if profile_thumb:
-        key_thumb = profile_thumb.name
-        client.delete_object(Bucket=bucket, Key=key_thumb)
         return True
     else:
         return False
@@ -119,3 +116,14 @@ def social_account_exist(username, social_id, email):
             return True
         else:
             return False
+
+
+def get_thumb(obj):
+    if User.objects.filter(id=obj.id).exists():
+        profile = User.objects.filter(id=obj.id).first().profile_pic.name
+        if profile:
+            return THUMBNAIL_LINK + profile
+        else:
+            return None
+    else:
+        return None

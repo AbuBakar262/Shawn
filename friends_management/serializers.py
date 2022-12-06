@@ -62,7 +62,7 @@ class FriendSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'profile_thumbnail', 'gender', 'phone', 'dob', 'bio', 'email_verified',
+                  'profile_pic', 'gender', 'phone', 'dob', 'bio', 'email_verified',
                   'phone_verified', 'is_friend']
 
     def get_is_friend(self, obj):

@@ -9,16 +9,21 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from notification.models import DeviceRegistration
 from .models import *
-from .utils import delete_image, social_login
+from .utils import *
 from friends_management.models import *
 
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_thumbnail = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
                   'profile_pic', 'profile_thumbnail', 'gender', 'phone', 'dob', 'bio', 'email_verified',
                   'phone_verified']
+
+    def get_profile_thumbnail(self, obj):
+        return get_thumb(obj)
 
 
 GENDER_CHOICES = (
@@ -47,7 +52,7 @@ class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'profile_thumbnail', 'gender', 'phone', 'dob', 'bio', 'email_verified',
+                  'profile_pic', 'gender', 'phone', 'dob', 'bio', 'email_verified',
                   'phone_verified', 'password',
                   'device_id']
 
@@ -94,7 +99,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
     account_type = serializers.ChoiceField(choices=SOCIAL_ACCOUNT_TYPE, required=True, allow_null=True,
                                            allow_blank=True)
     profile_pic = serializers.FileField(validators=[image_validator], required=False)
-    profile_thumbnail = serializers.FileField(validators=[image_validator], required=False)
+    profile_thumbnail = serializers.SerializerMethodField()
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True, allow_null=True, allow_blank=True)
     phone = serializers.CharField(required=True, allow_null=True, allow_blank=True)
     dob = serializers.DateField(required=False)
@@ -139,10 +144,10 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                     if age < 16:
                         raise serializers.ValidationError(
                             {'dob': _("You must be 16 or older to use Sean App")})
-                if 'profile_thumbnail' not in validated_data:
-                    profile_thumbnail = None
-                else:
-                    profile_thumbnail = validated_data['profile_thumbnail']
+                # if 'profile_thumbnail' not in validated_data:
+                #     profile_thumbnail = None
+                # else:
+                #     profile_thumbnail = validated_data['profile_thumbnail']
 
                 if 'profile_pic' not in validated_data:
                     raise serializers.ValidationError({'profile_pic': [
@@ -151,18 +156,21 @@ class SocialLoginSerializer(serializers.ModelSerializer):
 
                 user = User.objects.create(username=username.lower(), social_id=social_id, email=email.lower(),
                                            account_type=account_type, profile_pic=validated_data['profile_pic'],
-                                           profile_thumbnail=profile_thumbnail, gender=gender, phone=phone,
+                                           gender=gender, phone=phone,
                                            dob=dob, bio=bio, create_profile=True)
                 user.save()
             if not DeviceRegistration.objects.filter(user=user).exists():
                 DeviceRegistration.objects.create(user=user, registration_id=device_id)
         return user
 
+    def get_profile_thumbnail(self, obj):
+        return get_thumb(obj)
+
 
 class CreateUserProfileSerializer(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True)
     profile_pic = serializers.FileField(validators=[image_validator], required=True)
-    profile_thumbnail = serializers.FileField(validators=[image_validator], required=False)
+    profile_thumbnail = serializers.SerializerMethodField()
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     phone = serializers.CharField(required=True)
     dob = serializers.DateField(required=True)
@@ -189,12 +197,15 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
                 {'phone': _("Phone number already exists")})
         return attrs
 
+    def get_profile_thumbnail(self, obj):
+        return get_thumb(obj)
+
 
 class SocialUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'profile_thumbnail', 'gender', 'phone', 'dob', 'bio', 'email_verified',
+                  'profile_pic', 'gender', 'phone', 'dob', 'bio', 'email_verified',
                   'phone_verified']
 
 
@@ -202,7 +213,7 @@ class SocialProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'profile_thumbnail', 'gender', 'phone', 'dob', 'bio', 'email_verified',
+                  'profile_pic', 'gender', 'phone', 'dob', 'bio', 'email_verified',
                   'phone_verified']
 
 
@@ -217,6 +228,7 @@ class SigninSerializer(serializers.ModelSerializer):
         required=True
     )
     device_id = serializers.CharField(required=True, write_only=True, allow_null=True, allow_blank=True)
+    profile_thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -244,6 +256,9 @@ class SigninSerializer(serializers.ModelSerializer):
         if not device.filter(registration_id=device_id).exists():
             DeviceRegistration.objects.filter(user=user).update(registration_id=device_id)
         return user
+
+    def get_profile_thumbnail(self, obj):
+        return get_thumb(obj)
 
 
 class ForgotPasswordSerializer(serializers.ModelSerializer):
@@ -327,7 +342,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     dob = serializers.DateField(required=False)
     bio = serializers.CharField(required=False)
     profile_pic = serializers.FileField(required=False)
-    profile_thumbnail = serializers.FileField(required=False)
+    profile_thumbnail = serializers.SerializerMethodField()
     social_id = serializers.CharField(required=False)
 
     class Meta:
@@ -352,8 +367,8 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         user_profile_img = profile.name.split("profile_photos/")[1]
         if profile_pic:
             if not profile_pic.name == user_profile_img:
-                profile_thumbnail = attrs.get('profile_thumbnail')
-                delete_image(user_profile_img, profile_thumbnail)
+                # profile_thumbnail = attrs.get('profile_thumbnail')
+                delete_image(user_profile_img)
 
         # if attrs.get('profile_thumbnail'):
         #     profile_thumbnail = attrs.get('profile_thumbnail')
@@ -364,6 +379,9 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         #     delete_image(profile=profile, profile_thumb=profile_thumb)
 
         return attrs
+
+    def get_profile_thumbnail(self, obj):
+        return get_thumb(obj)
 
 
 class BlockUserSerializer(serializers.ModelSerializer):
@@ -378,6 +396,7 @@ class BlockUserSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    profile_thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -392,6 +411,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         friends_list = list(user_friend) + (list(friend_user))
         data['friend_list'] = friends_list
         return data
+
+    def get_profile_thumbnail(self, obj):
+        return get_thumb(obj)
+
+
 class UserProfileStatusSerializer(serializers.ModelSerializer):
     is_account = serializers.ChoiceField(choices=ACCOUNT_CHOICE, required=True)
 
@@ -402,6 +426,7 @@ class UserProfileStatusSerializer(serializers.ModelSerializer):
 
 class UsersProfileSerializer(serializers.ModelSerializer):
     is_friend = serializers.SerializerMethodField()
+    profile_thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -414,6 +439,9 @@ class UsersProfileSerializer(serializers.ModelSerializer):
             return True
         else:
             return False
+
+    def get_profile_thumbnail(self, obj):
+        return get_thumb(obj)
 
 
 class SocialProfileExistSerializer(serializers.Serializer):

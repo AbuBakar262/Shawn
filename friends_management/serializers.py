@@ -1,6 +1,7 @@
 from django.db.models import Q
 from rest_framework import serializers
 from accounts.serializers import UserSerializer
+from accounts.utils import *
 from friends_management.models import *
 from django.utils.translation import gettext_lazy as _
 from notification.models import *
@@ -22,12 +23,16 @@ class AddFriendSerializer(serializers.ModelSerializer):
 
 class FriendRequestListSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="sender.username")
-    profile_thumbnail = serializers.FileField(source="sender.profile_thumbnail")
+    profile_thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = Notification
         fields = ['id', 'sender', 'receiver', 'username', 'profile_thumbnail', 'message_title', 'message_body', 'type',
                   'read_status', 'created_at', 'updated_at']
+
+    def get_profile_thumbnail(self, obj):
+        sender = obj.sender
+        return get_thumb(sender)
 
 
 FRIEND_REQUEST_STATUS = (

@@ -13,6 +13,7 @@ from accounts.utils import *
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
+from location.utils import get_mongodb_database
 from sean_backend.utils import PermissionsUtil
 
 
@@ -290,11 +291,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                     "error": ["User not found!"]
                                 }}
                     return Response(data=response, status=status.HTTP_404_NOT_FOUND)
+                dbname = get_mongodb_database()
+                collection_name = dbname["SeanCollection"]
+                user_location = list(collection_name.find({"user_id": int(user_id)}, {'_id': 0}))
                 user_serializer = UsersProfileSerializer(User.objects.get(id=user_id))
+                data = user_serializer.data
+                data['latitude'] = user_location[0].get("location")[0]
+                data['longitude'] = user_location[0].get("location")[1]
                 response = {"statusCode": 200, "error": False,
                             "message": "User profile fetched successfully",
                             "data": {
-                                "user": user_serializer.data,
+                                "user": data,
                             }}
                 return Response(data=response, status=status.HTTP_200_OK)
             else:
@@ -392,7 +399,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         instance.delete()
 
     def get_permissions(self):
-        if self.action in ['edit_profile'] or self.action in \
+        if self.action in ['user_profile'] or self.action in \
                 ['profile_status'] or self.action in ['profile'] or self.action in ['list'] or self.action in ['retrieve']:
             permission_classes = [IsAuthenticated]
         else:

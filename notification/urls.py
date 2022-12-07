@@ -8,4 +8,5 @@ router.register("api/notification", NotificationViewSet, basename="notification"
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("api/total_notifications", NotificationViewSet.as_view({"get": "total_notifications"}), name="total_notifications"),
 ]

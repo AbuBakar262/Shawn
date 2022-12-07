@@ -33,6 +33,8 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         try:
             user = request.user
+            if Notification.objects.filter(receiver=user, read_status=False).exists():
+                Notification.objects.filter(receiver=user, read_status=False).update(read_status=True)
             friend_request = Notification.objects.filter(receiver=user).annotate(
                 type_order=Case(
                     When(type='Send Request',
@@ -48,6 +50,21 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 "message": "Notification List",
                 "data": serializer.data
             }, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+    def total_notifications(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            if Notification.objects.filter(receiver=user, read_status=False).exists():
+                notifications = Notification.objects.filter(receiver=user, read_status=False).count()
+            else:
+                notifications = 0
+            response = {"statusCode": 200, "error": False, "message": "Total Notifications!",
+                        "data": notifications}
+            return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                      "errors": e.args[0]}

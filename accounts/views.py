@@ -381,9 +381,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         PermissionsUtil.destroy_permission(request, instance)
-        profile = User.objects.filter(id=instance.id).first().profile_pic
-        profile_thumb = User.objects.filter(id=instance.id).first().profile_thumbnail
-        delete_image(profile, profile_thumb)
+        profile = User.objects.filter(id=instance.id).first().profile_pic.name
+        delete_image(profile)
         self.perform_destroy(instance)
         response = {"statusCode": 200, "error": False, "message": "User profile deleted successfully!"}
         return Response(data=response, status=status.HTTP_200_OK)
@@ -393,7 +392,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['edit_profile'] or self.action in \
-                ['profile_status'] or self.action in ['profile'] or self.action in ['list'] or self.action in ['retrieve']:
+                ['profile_status'] or self.action in ['profile'] or self.action in ['list'] \
+                or self.action in ['retrieve'] or self.action in ['destroy']:
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [AllowAny]
@@ -582,9 +582,8 @@ class UsersDelete(APIView):
                 if not user_obj_check:
                     users_not_found.append(user_id)
                 if user_obj_check:
-                    profile = User.objects.filter(id=user_id).first().profile_pic
-                    profile_thumb = User.objects.filter(id=user_id).first().profile_thumbnail
-                    delete_image(profile, profile_thumb)
+                    profile = User.objects.filter(id=user_id).first().profile_pic.name
+                    delete_image(profile)
                     users_exists.append(user_id)
                 User.objects.filter(id=user_id).delete()
             message_not_exists = {"user_ids": ["Object with ids={} does not exist.".format(users_not_found)]}

@@ -31,6 +31,7 @@ class User(AbstractUser):
     # profile_thumbnail = models.FileField(upload_to='profile_thumbnails', null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
+    country_code = models.CharField(max_length=10, null=True, blank=True)
     dob = models.DateField(_('date of birth'), null=True, blank=True)
     bio = models.TextField(_('additional information'), null=True, blank=True)
     email_verified = models.BooleanField(default=False)

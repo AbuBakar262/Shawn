@@ -56,3 +56,16 @@ class BlockUser(models.Model):
     def __str__(self):
         return f'{self.user.email} blocked {self.block_user.email}'
 
+
+class ReportUser(models.Model):
+    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reporter', null=True, blank=True)
+    reported = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reported', null=True, blank=True)
+    report_reason = models.TextField(_('report reason'), null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('reporter', 'reported')
+
+    def __str__(self):
+        return f'{self.reporter.email} reported {self.reported.email}'

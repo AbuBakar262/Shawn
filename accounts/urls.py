@@ -5,6 +5,7 @@ from django.urls import path, include
 router = SimpleRouter(trailing_slash=False)
 router.register("api/user", UserViewSet, basename="signup")
 router.register("api/profile", ProfileViewSet, basename="profile")
+router.register("api/report", ReportUserViewSet, basename="reports")
 
 urlpatterns = [
     path("", include(router.urls)),

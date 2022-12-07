@@ -595,3 +595,25 @@ class UsersDelete(APIView):
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                      "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReportUserViewSet(viewsets.ModelViewSet):
+    queryset = ReportUser.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        serializer = ReportUserSerializer(data=request.data, context={'request': request})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(user=user)
+        return Response(data={
+            "status": "success",
+            "status_code": status.HTTP_200_OK,
+            "message": "User reported successfully",
+            "result": serializer.data
+        }, status=status.HTTP_200_OK)

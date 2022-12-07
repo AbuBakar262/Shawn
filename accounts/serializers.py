@@ -459,3 +459,36 @@ class SocialProfileExistSerializer(serializers.Serializer):
         if email is None and username is None:
             raise serializers.ValidationError({'error': _('Email or username is required, Please enter one of them')})
         return attrs
+
+
+class ReportUserSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True)
+    reported = serializers.CharField(required=True)
+    report_reason = serializers.CharField(required=True)
+
+    class Meta:
+        model = ReportUser
+        fields = ['id', 'reported', 'report_reason']
+
+    def validate(self, attrs):
+        reporter = self.context['request'].user
+        reported = attrs.get('reported')
+        report_reason = attrs.get('report_reason')
+        if ReportUser.objects.filter(reporter=reporter, reported=reported, report_reason=report_reason).exists():
+            raise serializers.ValidationError({'error': _('You have already reported this user')})
+        return attrs
+
+    def create(self, validated_data):
+        reporter = self.context['request'].user
+        reported = validated_data.get('reported')
+        report_reason = validated_data.get('report_reason')
+        reported = User.objects.filter(id=reported).first()
+        report = ReportUser.objects.create(reporter=reporter, reported=reported, report_reason=report_reason)
+        return report
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['reporter'] = instance.reporter.id
+        data['reported'] = instance.reported.id
+        return data
+

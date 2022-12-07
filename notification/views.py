@@ -4,9 +4,9 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-
-
+from django.db.models import Case, When, Value, IntegerField
 # Create your views here.
+
 
 class DeviceRegistrationViewSet(viewsets.ModelViewSet):
     queryset = DeviceRegistration.objects.all()
@@ -33,7 +33,14 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         try:
             user = request.user
-            friend_request = Notification.objects.filter(receiver=user)
+            friend_request = Notification.objects.filter(receiver=user).annotate(
+                type_order=Case(
+                    When(type='Send Request',
+                         then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField(),
+                )
+            ).order_by('type_order', '-created_at')
             serializer = FriendRequestListSerializer(friend_request, many=True)
             return Response({
                 "status": True,

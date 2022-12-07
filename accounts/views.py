@@ -296,8 +296,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 user_location = list(collection_name.find({"user_id": int(user_id)}, {'_id': 0}))
                 user_serializer = UsersProfileSerializer(User.objects.get(id=user_id))
                 data = user_serializer.data
-                data['latitude'] = user_location[0].get("location")[0]
-                data['longitude'] = user_location[0].get("location")[1]
+                if user_location:
+                    data['latitude'] = user_location[0].get("location")[0]
+                    data['longitude'] = user_location[0].get("location")[1]
+                else:
+                    data['latitude'] = 0.00
+                    data['longitude'] = 0.00
                 response = {"statusCode": 200, "error": False,
                             "message": "User profile fetched successfully",
                             "data": {

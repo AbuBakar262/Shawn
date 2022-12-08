@@ -8,9 +8,5 @@ router.register("api/check_in_location", CheckInLocationViewSet, basename="check
 
 urlpatterns = [
     path("", include(router.urls)),
-    path(
-        "api/search_location",
-        SearchLocation.as_view(),
-        name="search_location",
-        ),
+    path("api/search_location", UserLocationViewSet.as_view({"get": "search_location"}), name="search_location"),
 ]

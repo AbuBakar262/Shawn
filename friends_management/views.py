@@ -67,11 +67,9 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 "found_people": len(user_found)
             }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(data={
-                "error": True,
-                "statusCode": 400,
-                "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
 
     def contact_list(self, request, *args, **kwargs):
@@ -95,10 +93,9 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 "total": contact_list.count()
             }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({
-                "status": False,
-                "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def all_user_list(self, request, *args, **kwargs):
         try:
@@ -112,10 +109,9 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 "found_people": len(user_found)
             }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({
-                "statusCode": 400, "error": True,
-                "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def send_friend_request(self, request, *args, **kwargs):
         try:
@@ -160,10 +156,9 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_200_OK
                 )
         except Exception as e:
-            return Response(data={
-                "statusCode": 400, "error": True,
-                "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def friend_request_action(self, request, *args, **kwargs):
         try:
@@ -208,11 +203,9 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "data": {}
                 }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(data={
-                "statusCode": 400, "error": True,
-                "message": str(e),
-                "data": {}
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def friend_request_delete(self, request, *args, **kwargs):
         try:
@@ -246,11 +239,9 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "message": "You are not authorized to perform this action"
                 }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response(data={
-                "status": "error",
-                "status_code": status.HTTP_400_BAD_REQUEST,
-                "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def unfriend(self, request, *args, **kwargs):
         try:
@@ -271,8 +262,6 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     "data": {}
                 }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(data={
-                "statusCode": 400, "error": True,
-                "message": str(e),
-                "data": {}
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)

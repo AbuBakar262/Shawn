@@ -39,11 +39,9 @@ class UserViewSet(viewsets.ModelViewSet):
                         "data": serializer.data}
             return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
-            return Response(data={
-                "status": "error",
-                "status_code": status.HTTP_400_BAD_REQUEST,
-                "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -126,11 +124,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_200_OK
             )
         except Exception as e:
-            return Response(data={
-                "status": "error",
-                "status_code": status.HTTP_400_BAD_REQUEST,
-                "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         operation_description="Forgot password",
@@ -186,8 +182,9 @@ class UserViewSet(viewsets.ModelViewSet):
                     }
                 }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(data={"status": "error", "status_code": status.HTTP_400_BAD_REQUEST, "message": str(e)
-                                  }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def verify_otp(self, request, *args, **kwargs):
         try:
@@ -226,11 +223,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 }
             }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(data={
-                "status": "error",
-                "status_code": status.HTTP_400_BAD_REQUEST,
-                "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         operation_description="Reset Password",
@@ -267,11 +262,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 }
             }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(data={
-                "status": "error",
-                "status_code": status.HTTP_400_BAD_REQUEST,
-                "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
@@ -323,10 +316,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             }}
                 return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -364,7 +356,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
-                     "errors": str(e)}
+                     "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def profile_status(self, request, *args, **kwargs):
@@ -385,9 +377,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         "data": user_serializer.data}
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
-            error = {"statusCode": 400, "error": True,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -511,10 +503,9 @@ class BlockUserViewSet(viewsets.ModelViewSet):
                 "result": serializer.data
             }, status=status.HTTP_200_OK)
         except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def blocked_user_list(self, request, *args, **kwargs):
         try:
@@ -528,10 +519,9 @@ class BlockUserViewSet(viewsets.ModelViewSet):
                 "result": serializer.data
             }, status=status.HTTP_200_OK)
         except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
     def unblock_user(self, request, *args, **kwargs):
         try:
@@ -563,10 +553,9 @@ class BlockUserViewSet(viewsets.ModelViewSet):
                 "message": "User unblocked successfully",
             }, status=status.HTTP_200_OK)
         except Exception as e:
-            error = {"status": "error",
-                     "status_code": status.HTTP_400_BAD_REQUEST,
-                     "message": str(e)}
-            return Response(data=error, status=status.HTTP_400_BAD_REQUEST)
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UsersDelete(APIView):

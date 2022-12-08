@@ -1,8 +1,14 @@
+import json
+
+import requests
+
 from location.serializers import *
 from rest_framework import viewsets, generics, filters
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from sean_backend.settings import GOOGLE_MAPS_URL, GOOGLE_MAPS_RADIUS, GOOGLE_MAPS_TYPES, GOOGLE_MAPS_KEYWORDS, \
+    GOOGLE_MAPS_API_KEY
 from sean_backend.utils import PermissionsUtil
 
 
@@ -51,6 +57,29 @@ class UserLocationViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
+    def search_location(self, request, *args, **kwargs):
+        serializer = SearchLocationSerializer(data=request.query_params)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        lat = request.query_params.get("latitude")
+        long = request.query_params.get("longitude")
+        url = GOOGLE_MAPS_URL+lat+"%2C"+long+"&"+"radius="+GOOGLE_MAPS_RADIUS+"&"+"type="+GOOGLE_MAPS_TYPES+"&keyword="+GOOGLE_MAPS_KEYWORDS+"&key="+GOOGLE_MAPS_API_KEY
+        payload = {}
+        headers = {}
+        response = requests.request("GET", url, headers=headers, data=payload)
+        response = json.loads(response.text)
+
+        # query = FavouriteLocation.objects.filter(user=request.user).order_by('-id')
+        # serializer = UserLocationListSerializer(query, many=True)
+        response = {"statusCode": 200, "error": False, "message": "User Saved Location List!",
+                    "data": response}
+        return Response(response, status=status.HTTP_201_CREATED)
+
+
 class CheckInLocationViewSet(viewsets.ModelViewSet):
     queryset = CheckInLocation.objects.all()
     serializer_class = CheckInLocationSerializer
@@ -77,12 +106,3 @@ class CheckInLocationViewSet(viewsets.ModelViewSet):
                     "data": serializer.data}
         return Response(response, status=status.HTTP_201_CREATED)
 
-
-class SearchLocation(generics.ListAPIView):
-    queryset = FavouriteLocation.objects.all()
-    serializer_class = SearchLocationListSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['title']
-
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)

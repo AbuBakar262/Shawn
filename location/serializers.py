@@ -80,3 +80,8 @@ class CheckInListLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = CheckInLocation
         fields = ['id', 'user', 'latitude', 'longitude', 'address', 'title', 'created_at', 'updated_at']
+
+
+class SearchLocationSerializer(serializers.Serializer):
+    latitude = serializers.CharField(required=True)
+    longitude = serializers.CharField(required=True)

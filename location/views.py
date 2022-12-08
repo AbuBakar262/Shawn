@@ -82,7 +82,7 @@ class SearchLocation(generics.ListAPIView):
     queryset = FavouriteLocation.objects.all()
     serializer_class = SearchLocationListSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['address']
+    search_fields = ['title']
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

@@ -7,11 +7,13 @@ from accounts.serializers import *
 class UserLocationSerializer(serializers.ModelSerializer):
     latitude = serializers.FloatField(required=True)
     longitude = serializers.FloatField(required=True)
-    address = serializers.CharField(required=False)
+    address = serializers.CharField(required=True)
+    title = serializers.CharField(required=True)
+    image = serializers.FileField(required=True)
 
     class Meta:
         model = FavouriteLocation
-        fields = ['id', 'user', 'latitude', 'longitude', 'address', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'latitude', 'longitude', 'address', 'title', 'image', 'created_at', 'updated_at']
 
     def validate(self, attrs):
         latitude = attrs.get("latitude")
@@ -26,7 +28,8 @@ class UserLocationListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FavouriteLocation
-        fields = ['id', 'user', 'latitude', 'longitude', 'address', 'created_at', 'updated_at', 'total']
+        fields = ['id', 'user', 'latitude', 'longitude', 'address', 'title', 'image', 'created_at', 'updated_at',
+                  'total']
 
     def get_total(self, obj):
         if CheckInLocation.objects.filter(latitude=obj.latitude, longitude=obj.longitude).exists():
@@ -42,7 +45,7 @@ class SearchLocationListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FavouriteLocation
-        fields = ['id', 'latitude', 'longitude', 'address','total']
+        fields = ['id', 'latitude', 'longitude', 'address', 'title', 'image', 'total']
 
     def get_total(self, obj):
         if CheckInLocation.objects.filter(latitude=obj.latitude, longitude=obj.longitude).exists():
@@ -51,14 +54,17 @@ class SearchLocationListSerializer(serializers.ModelSerializer):
         else:
             total = 0
             return total
+
+
 class CheckInLocationSerializer(serializers.ModelSerializer):
     latitude = serializers.FloatField(required=True)
     longitude = serializers.FloatField(required=True)
     address = serializers.CharField(required=False)
+    title = serializers.CharField(required=False)
 
     class Meta:
         model = CheckInLocation
-        fields = ['id', 'user', 'latitude', 'longitude', 'address', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'latitude', 'longitude', 'address', 'title', 'created_at', 'updated_at']
 
     def validate(self, attrs):
         user = self.context['request'].user
@@ -73,4 +79,4 @@ class CheckInLocationSerializer(serializers.ModelSerializer):
 class CheckInListLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = CheckInLocation
-        fields = ['id', 'user', 'latitude', 'longitude', 'address', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'latitude', 'longitude', 'address', 'title', 'created_at', 'updated_at']

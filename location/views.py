@@ -74,7 +74,12 @@ class UserLocationViewSet(viewsets.ModelViewSet):
             response = json.loads(response.text)
             result = []
             if response:
-                for i in response['results']:
+                response_length = response['results']
+                if len(response_length) > 10:
+                    response_data = response_length[0:10]
+                else:
+                    response_data = response_length
+                for i in response_data:
                     data = {}
                     data['location'] = i.get("geometry").get("location")
                     data['icon'] = i.get("icon")
@@ -91,6 +96,10 @@ class UserLocationViewSet(viewsets.ModelViewSet):
                     latitude = i.get("geometry").get("location").get("lat")
                     longitude = i.get("geometry").get("location").get("lng")
                     data['total'] = CheckInLocation.objects.filter(latitude=latitude, longitude=longitude).count()
+                    user_friend = Friend.objects.filter(user=request.user).values_list("friend_id", flat=True)
+                    friend_user = Friend.objects.filter(friend=request.user).values_list("user_id", flat=True)
+                    friends_list = list(user_friend) + (list(friend_user))
+                    data['total_friends'] = CheckInLocation.objects.filter(user_id__in=friends_list,latitude=latitude, longitude=longitude).count()
                     result.append(data)
             else:
                 result = []

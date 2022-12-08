@@ -16,7 +16,7 @@ class UserLocationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         latitude = attrs.get("latitude")
         longitude = attrs.get("longitude")
-        if FavouriteLocation.objects.filter(latitude=latitude, longitude=longitude).exists():
+        if FavouriteLocation.objects.filter(latitude=latitude, longitude=longitude, user=self.context['request'].user).exists():
             raise serializers.ValidationError({'error': _('You already save this location')})
         return attrs
 

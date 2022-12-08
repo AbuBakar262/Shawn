@@ -12,7 +12,7 @@ from notification.models import *
 
 from location.utils import get_mongodb_database
 # from notification.models import DeviceRegistration
-from sean_backend.utils import notification
+from sean_backend.utils import notification, firebase_notification
 
 
 # Create your views here.
@@ -24,24 +24,38 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
     queryset = Friend.objects.all()
 
     def create(self, request, *args, **kwargs):
-        user = request.user
-        serializer = self.get_serializer(data=request.data, context={"request": request})
         try:
-            serializer.is_valid(raise_exception=True)
+            user = request.user
+            serializer = self.get_serializer(data=request.data, context={"request": request})
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            # serializer.save(user=user)
+            friend = serializer.data.get("friend")
+            registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
+            notification = firebase_notification(device_id=registration_id, title="Friend", body="{} is now your friend".format(user.username))
+            # notification(device_id=registration_id, title="Friend", body="{} is now your friend".format(user.username))
+            if notification == True:
+                receiver = User.objects.filter(id=friend).first()
+                Notification.objects.create(sender=user, receiver=receiver, type="Add Friend")
+                response = {"statusCode": 200, "error": False, "message": "Friend Added Successfully!",
+                            "data": serializer.data}
+                return Response(response, status=status.HTTP_201_CREATED)
+            else:
+                receiver = User.objects.filter(id=friend).first()
+                Notification.objects.create(sender=user, receiver=receiver, type="Add Friend")
+                response = {"statusCode": 200, "error": False, "message": "Friend Added Successfully, "
+                                                                          "but notification not sent!",
+                            "data": serializer.data}
+                return Response(response, status=status.HTTP_201_CREATED)
+
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                      "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save(user=user)
-        friend = serializer.data.get("friend")
-        registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
-        notification(device_id=registration_id, title="Friend", body="{} is now your friend".format(user.username))
-        receiver = User.objects.filter(id=friend).first()
-        Notification.objects.create(sender=user, receiver=receiver, type="Add Friend")
-        response = {"statusCode": 200, "error": False, "message": "Friend Added Successfully!",
-                    "data": serializer.data}
-        return Response(response, status=status.HTTP_201_CREATED)
-
     def list(self, request, *args, **kwargs):
         try:
             user = request.user

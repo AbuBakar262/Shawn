@@ -34,6 +34,8 @@ FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY')
 MONGODB_CONNECTING_STRING = os.getenv('MONGODB_CONNECTING_STRING')
 MONGODB_NAME = os.getenv('MONGODB_NAME')
 COLLECTION_NAME = os.getenv('COLLECTION_NAME')
+FIREBASE_URL = os.getenv('FIREBASE_URL')
+FIREBASE_SCOPES = os.getenv('FIREBASE_SCOPES')
 # DJANGO_ALLOW_ASYNC_UNSAFE = os.getenv('DJANGO_ALLOW_ASYNC_UNSAFE')
 # Application definition
 
@@ -54,7 +56,8 @@ INSTALLED_APPS = [
     'event',
     'notification',
     'admin_management',
-    'channels'
+    'channels',
+    'django_filters'
 ]
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = [

@@ -1,5 +1,5 @@
 from location.serializers import *
-from rest_framework import viewsets
+from rest_framework import viewsets, generics, filters
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -76,3 +76,13 @@ class CheckInLocationViewSet(viewsets.ModelViewSet):
         response = {"statusCode": 200, "error": False, "message": "User Saved Location List!",
                     "data": serializer.data}
         return Response(response, status=status.HTTP_201_CREATED)
+
+
+class SearchLocation(generics.ListAPIView):
+    queryset = FavouriteLocation.objects.all()
+    serializer_class = SearchLocationListSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['address']
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

@@ -37,3 +37,4 @@ channels==3.0.4
 channels-redis==3.4.1
 pymongo==4.3.2
 googlemaps==4.7.0
+django-filter==21.1

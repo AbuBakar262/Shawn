@@ -37,6 +37,20 @@ class UserLocationListSerializer(serializers.ModelSerializer):
             return total
 
 
+class SearchLocationListSerializer(serializers.ModelSerializer):
+    total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FavouriteLocation
+        fields = ['id', 'latitude', 'longitude', 'address','total']
+
+    def get_total(self, obj):
+        if CheckInLocation.objects.filter(latitude=obj.latitude, longitude=obj.longitude).exists():
+            total = CheckInLocation.objects.filter(latitude=obj.latitude, longitude=obj.longitude).count()
+            return total
+        else:
+            total = 0
+            return total
 class CheckInLocationSerializer(serializers.ModelSerializer):
     latitude = serializers.FloatField(required=True)
     longitude = serializers.FloatField(required=True)

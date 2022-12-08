@@ -33,11 +33,10 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            # serializer.save(user=user)
+            serializer.save(user=user)
             friend = serializer.data.get("friend")
             registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
             notification = firebase_notification(device_id=registration_id, title="Friend", body="{} is now your friend".format(user.username))
-            # notification(device_id=registration_id, title="Friend", body="{} is now your friend".format(user.username))
             if notification == True:
                 receiver = User.objects.filter(id=friend).first()
                 Notification.objects.create(sender=user, receiver=receiver, type="Add Friend")
@@ -47,8 +46,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             else:
                 receiver = User.objects.filter(id=friend).first()
                 Notification.objects.create(sender=user, receiver=receiver, type="Add Friend")
-                response = {"statusCode": 200, "error": False, "message": "Friend Added Successfully, "
-                                                                          "but notification not sent!",
+                response = {"statusCode": 200, "error": False, "message": "Friend Added Successfully, but issue in notification, notification not sent!",
                             "data": serializer.data}
                 return Response(response, status=status.HTTP_201_CREATED)
 
@@ -133,21 +131,34 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             receiver = User.objects.filter(id=friend).first()
             friend_request = Notification.objects.create(sender=user, receiver=receiver, type="Send Request")
             registration_id = DeviceRegistration.objects.filter(user=friend).first().registration_id
-            notification(device_id=registration_id, title="Friend Request", body="{} sent you friend request".
-                         format(user.username))
-            return Response(
-                data={
-                    "status": "success",
-                    "status_code": status.HTTP_200_OK,
-                    "message": "Friend request sent successfully",
-                    "data": {
-                        "user": friend_request.sender.id,
-                        "friend": friend_request.receiver.id
-                    }
-                },
-                status=status.HTTP_200_OK
-            )
-
+            notification = firebase_notification(device_id=registration_id, title="Friend Request",
+                                                 body="{} sent you friend request".format(user.username))
+            if notification == True:
+                return Response(
+                    data={
+                        "status": "success",
+                        "status_code": status.HTTP_200_OK,
+                        "message": "Friend request sent successfully",
+                        "data": {
+                            "user": friend_request.sender.id,
+                            "friend": friend_request.receiver.id
+                        }
+                    },
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response(
+                    data={
+                        "status": "success",
+                        "status_code": status.HTTP_200_OK,
+                        "message": "Friend request sent successfully, but issue in notification, notification not sent",
+                        "data": {
+                            "user": friend_request.sender.id,
+                            "friend": friend_request.receiver.id
+                        }
+                    },
+                    status=status.HTTP_200_OK
+                )
         except Exception as e:
             return Response(data={
                 "statusCode": 400, "error": True,
@@ -172,14 +183,21 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 Friend.objects.create(user=friend_request.sender, friend=friend_request.receiver)
                 Notification.objects.create(sender=friend_request.receiver, receiver=friend_request.sender, type="Accept Request")
                 registration_id = DeviceRegistration.objects.filter(user=friend_request.sender).first().registration_id
-                notification(device_id=registration_id, title="Friend",
-                             body="{} is now your friend".format(friend_request.receiver.username))
+                notification = firebase_notification(device_id=registration_id, title="Friend",
+                                                     body="{} is now your friend".format(user.username))
                 friend_request.delete()
-                return Response(data={
-                    "statusCode": 200, "error": False,
-                    "message": "Friend request accepted",
-                    "data": {}
-                }, status=status.HTTP_200_OK)
+                if notification == True:
+                    return Response(data={
+                        "statusCode": 200, "error": False,
+                        "message": "Friend request accepted",
+                        "data": {}
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response(data={
+                        "statusCode": 200, "error": False,
+                        "message": "Friend request accepted, but issue in notification, notification not sent",
+                        "data": {}
+                    }, status=status.HTTP_200_OK)
             else:
                 RejectRequest.objects.create(user=friend_request.sender,
                                              rejected_user=friend_request.receiver)

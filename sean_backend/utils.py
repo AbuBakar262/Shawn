@@ -60,7 +60,10 @@ def firebase_notification(device_id, title, body):
     }
     response = requests.request("POST", url, headers=headers, data=payload)
     response = json.loads(response.text)
-    if not response['error']['code'] == 200:
-        return False
+    if 'error' in response:
+        if not response['error']['code'] == 200:
+            return False
+        else:
+            return True
     else:
         return True

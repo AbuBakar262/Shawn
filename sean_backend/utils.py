@@ -32,11 +32,6 @@ class PermissionsUtil:
         raise exceptions.PermissionDenied()
 
 
-def notification(device_id, title, body):
-    push_service.notify_single_device(registration_id=device_id, message_title=title,
-                                                      message_body=body)
-
-
 def firebase_notification(device_id, title, body):
     SCOPES = [FIREBASE_SCOPES]
     credentials = service_account.Credentials.from_service_account_file(

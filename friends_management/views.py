@@ -12,7 +12,7 @@ from notification.models import *
 
 from location.utils import get_mongodb_database
 # from notification.models import DeviceRegistration
-from sean_backend.utils import notification, firebase_notification
+from sean_backend.utils import firebase_notification
 
 
 # Create your views here.

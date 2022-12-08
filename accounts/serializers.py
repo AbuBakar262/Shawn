@@ -429,20 +429,20 @@ class UserProfileStatusSerializer(serializers.ModelSerializer):
 
 
 class UsersProfileSerializer(serializers.ModelSerializer):
-    is_friend = serializers.SerializerMethodField()
+    # is_friend = serializers.SerializerMethodField()
     profile_thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'create_profile', 'social_id', 'is_account', 'profile_pic',
                   'profile_thumbnail', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified', 'account_type', 'is_friend']
+                  'phone_verified', 'account_type']
 
-    def get_is_friend(self, obj):
-        if Friend.objects.filter(Q(user=obj) | Q(friend=obj)).exists():
-            return True
-        else:
-            return False
+    # def get_is_friend(self, obj):
+    #     if Friend.objects.filter(Q(user=obj) | Q(friend=obj)).exists():
+    #         return True
+    #     else:
+    #         return False
 
     def get_profile_thumbnail(self, obj):
         return get_thumb(obj)

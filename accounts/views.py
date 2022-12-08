@@ -284,11 +284,16 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                     "error": ["User not found!"]
                                 }}
                     return Response(data=response, status=status.HTTP_404_NOT_FOUND)
+                user_serializer = UsersProfileSerializer(User.objects.get(id=user_id), context={"user_id": user_id})
+                data = user_serializer.data
+                friend = User.objects.filter(id=user_id).first()
+                if Friend.objects.filter(Q(user=request.user, friend=friend) | Q(friend=request.user, user=friend)).exists():
+                    data['is_friend'] = True
+                else:
+                    data['is_friend'] = False
                 dbname = get_mongodb_database()
                 collection_name = dbname["SeanCollection"]
                 user_location = list(collection_name.find({"user_id": int(user_id)}, {'_id': 0}))
-                user_serializer = UsersProfileSerializer(User.objects.get(id=user_id))
-                data = user_serializer.data
                 if user_location:
                     data['latitude'] = user_location[0].get("location")[0]
                     data['longitude'] = user_location[0].get("location")[1]

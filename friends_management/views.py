@@ -256,6 +256,15 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             friend = request.data.get('friend')
             if Friend.objects.filter(Q(user=user, friend=friend) | Q(user=friend, friend=user)).exists():
                 Friend.objects.filter(Q(user=user, friend=friend) | Q(user=friend, friend=user)).delete()
+                user_friend = Friend.objects.filter(user=user).values_list("friend_id", flat=True)
+                friend_user = Friend.objects.filter(friend=user).values_list("user_id", flat=True)
+                friends_list = list(user_friend) + (list(friend_user))
+                dbname = get_mongodb_database()
+                collection_name = dbname["SeanCollection"]
+                user_found = list(collection_name.find({"user_id": user.id}, {'_id': 0}))
+                myquery = user_found[0]
+                new_values = {"$set": {"friends_list": friends_list}}
+                collection_name.update_one(myquery, new_values)
                 return Response(data={
                     "statusCode": 200, "error": False,
                     "message": "UnFriend successfully",

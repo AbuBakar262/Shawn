@@ -56,7 +56,6 @@ class UserLocationViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.delete()
 
-
     def search_location(self, request, *args, **kwargs):
         serializer = SearchLocationSerializer(data=request.query_params)
         try:
@@ -67,18 +66,41 @@ class UserLocationViewSet(viewsets.ModelViewSet):
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
         lat = request.query_params.get("latitude")
         long = request.query_params.get("longitude")
-        url = GOOGLE_MAPS_URL+lat+"%2C"+long+"&"+"radius="+GOOGLE_MAPS_RADIUS+"&"+"type="+GOOGLE_MAPS_TYPES+"&keyword="+GOOGLE_MAPS_KEYWORDS+"&key="+GOOGLE_MAPS_API_KEY
-        payload = {}
-        headers = {}
-        response = requests.request("GET", url, headers=headers, data=payload)
-        response = json.loads(response.text)
-
-        # query = FavouriteLocation.objects.filter(user=request.user).order_by('-id')
-        # serializer = UserLocationListSerializer(query, many=True)
-        response = {"statusCode": 200, "error": False, "message": "User Saved Location List!",
-                    "data": response}
-        return Response(response, status=status.HTTP_201_CREATED)
-
+        try:
+            url = GOOGLE_MAPS_URL+lat+"%2C"+long+"&"+"radius="+GOOGLE_MAPS_RADIUS+"&"+"type="+GOOGLE_MAPS_TYPES+"&keyword="+GOOGLE_MAPS_KEYWORDS+"&key="+GOOGLE_MAPS_API_KEY
+            payload = {}
+            headers = {}
+            response = requests.request("GET", url, headers=headers, data=payload)
+            response = json.loads(response.text)
+            result = []
+            if response:
+                for i in response['results']:
+                    data = {}
+                    data['location'] = i.get("geometry").get("location")
+                    data['icon'] = i.get("icon")
+                    data['name'] = i.get("name")
+                    data['opening_hours'] = i.get("opening_hours")
+                    data['photos'] = i.get("photos")
+                    data['place_id'] = i.get("place_id")
+                    data['rating'] = i.get("rating")
+                    data['reference'] = i.get("reference")
+                    data['scope'] = i.get("scope")
+                    data['types'] = i.get("types")
+                    data['user_ratings_total'] = i.get("user_ratings_total")
+                    data['vicinity'] = i.get("vicinity")
+                    latitude = i.get("geometry").get("location").get("lat")
+                    longitude = i.get("geometry").get("location").get("lng")
+                    data['total'] = CheckInLocation.objects.filter(latitude=latitude, longitude=longitude).count()
+                    result.append(data)
+            else:
+                result = []
+            response = {"statusCode": 200, "error": False, "message": "Search Location List!",
+                        "data": result}
+            return Response(response, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
 class CheckInLocationViewSet(viewsets.ModelViewSet):
     queryset = CheckInLocation.objects.all()

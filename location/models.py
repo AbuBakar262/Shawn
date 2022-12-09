@@ -12,7 +12,7 @@ class FavouriteLocation(models.Model):
     longitude = models.FloatField(null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     title = models.CharField(max_length=100, null=True, blank=True)
-    image = models.FileField(upload_to='save_location', null=True, blank=True)
+    image = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

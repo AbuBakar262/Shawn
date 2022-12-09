@@ -313,7 +313,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 friends_list = list(user_friend) + (list(friend_user))
                 dbname = get_mongodb_database()
                 collection_name = dbname["SeanCollection"]
-                user_found = list(collection_name.find({"user_id": user.id}, {'_id': 0}))
+                user_found = collection_name.find({"user_id": user.id}, {'_id': 0})
                 myquery = user_found[0]
                 new_values = {"$set": {"friends_list": friends_list}}
                 collection_name.update_one(myquery, new_values)

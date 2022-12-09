@@ -146,7 +146,10 @@ def update_location(user_id, latitude, longitude, profile_thumbnail, friends_lis
                 # collection_name.create_index([("location", GEO2D)])
                 collection_name.create_index([("location", "2dsphere")])
         found = collection_name.find({"user_id": user_id})
-        driver_mongo = list(found)
+        try:
+            driver_mongo = list(found)
+        except:
+            driver_mongo = []
         if len(driver_mongo) == 0:
             collection_name.insert_one(
                 {"user_id": user_id, "profile_thumbnail": profile_thumbnail, "friends_list":friends_list,

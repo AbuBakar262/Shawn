@@ -293,13 +293,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     data['is_friend'] = False
                 dbname = get_mongodb_database()
                 collection_name = dbname["SeanCollection"]
-                user_location = list(collection_name.find({"user_id": int(user_id)}, {'_id': 0}))
-                if user_location:
-                    data['latitude'] = user_location[0].get("location")[0]
-                    data['longitude'] = user_location[0].get("location")[1]
-                else:
-                    data['latitude'] = 0.00
-                    data['longitude'] = 0.00
+                user_location = collection_name.find({"user_id": int(user_id)}, {'_id': 0})
+                for i in user_location:
+                    if i.get("location"):
+                        data['latitude'] = i.get("location").get("coordinates")[0]
+                        data['longitude'] = i.get("location").get("coordinates")[1]
+                    else:
+                        data['latitude'] = 0.00
+                        data['longitude'] = 0.00
                 response = {"statusCode": 200, "error": False,
                             "message": "User profile fetched successfully",
                             "data": {

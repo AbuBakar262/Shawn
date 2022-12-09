@@ -12,7 +12,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from location.serializers import SearchLocationSerializer
 from notification.models import *
 
-from location.utils import get_mongodb_database
+from location.utils import get_mongodb_database, distance_google_map
 # from notification.models import DeviceRegistration
 from sean_backend.utils import firebase_notification
 
@@ -72,13 +72,26 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             collection_name = dbname["SeanCollection"]
             query = {"friends_list": user.id, "location": {"$near": {"$geometry": {"type": "Point", "coordinates":
                 [float(latitude), float(longitude)], }, "$maxDistance": 15000, }, }, }, {'_id': 0}
-            user_found = list(collection_name.find(query))
+            user_found = collection_name.find(query[0], query[1])
+            result = []
+            origin = (latitude, longitude)
+            for i in user_found:
+                destination = (i.get("location").get('coordinates')[0], i.get('location').get('coordinates')[1])
+                distance_time = distance_google_map(origin, destination)
+                data = {
+                    'user_id': i.get("user_id"),
+                    'profile_thumbnail': i.get("profile_thumbnail"),
+                    'friends_list': i.get("friends_list"),
+                    'location': i.get("location").get("coordinates"),
+                    "distance": distance_time.get('distance').get('text'),
+                    "time": distance_time.get('duration').get('text')}
+                result.append(data)
             # user_found = list(collection_name.find({"friends_list": user.id}, {'_id': 0}))
             return Response(data={
                 "statusCode": 200, "error": False,
                 "message": "All Friends List",
-                "data": user_found,
-                "found_people": len(user_found)
+                "data": result,
+                "found_people": len(result)
             }, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
@@ -126,13 +139,26 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             dbname = get_mongodb_database()
             collection_name = dbname["SeanCollection"]
             query = {"location": {"$near": {"$geometry": {"type": "Point", "coordinates":
-                [float(latitude), float(longitude)], }, "$maxDistance": 15000, }, }, }
-            user_found = list(collection_name.find(query))
+                [float(latitude), float(longitude)], }, "$maxDistance": 15000, }, }, }, {'_id':0}
+            user_found = collection_name.find(query[0],query[1])
+            result = []
+            origin = (latitude, longitude)
+            for i in user_found:
+                destination = (i.get("location").get('coordinates')[0], i.get('location').get('coordinates')[1])
+                distance_time = distance_google_map(origin, destination)
+                data = {
+                'user_id': i.get("user_id"),
+                'profile_thumbnail' : i.get("profile_thumbnail"),
+                'friends_list' : i.get("friends_list"),
+                'location' : i.get("location").get("coordinates"),
+                "distance": distance_time.get('distance').get('text'),
+                "time": distance_time.get('duration').get('text')}
+                result.append(data)
             # user_found = list(collection_name.find({},{'_id':0}))
             return Response({
                 "statusCode": 200, "error": False, "message": "All Users List",
-                "data": user_found,
-                "found_people": len(user_found)
+                "data": result,
+                "found_people": len(result)
             }, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",

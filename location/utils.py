@@ -3,7 +3,7 @@ from pymongo import MongoClient, GEO2D
 from rest_framework.response import Response
 
 from friends_management.models import Friend
-from sean_backend.settings import MONGODB_CONNECTING_STRING, MONGODB_NAME
+from sean_backend.settings import MONGODB_CONNECTING_STRING, MONGODB_NAME, GOOGLE_MAPS_API_KEY
 
 
 def get_mongodb_database():
@@ -17,17 +17,17 @@ def get_mongodb_database():
     return client[MONGODB_NAME]
 
 
-# def distance_google_map(pickup, destination):
-#
-#     # Requires API key
-#     gmaps = googlemaps.Client(key=GOOGLE_MAP_API_KEY)
-#     origin = pickup
-#     destination = destination
-#     # Requires cities name
-#     my_dist = gmaps.distance_matrix(origin, destination, mode='driving')['rows'][0]['elements'][0]
-#
-#     # Printing the result
-#     return my_dist
+def distance_google_map(pickup, destination):
+
+    # Requires API key
+    gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
+    origin = pickup
+    destination = destination
+    # Requires cities name
+    my_dist = gmaps.distance_matrix(origin, destination, mode='driving')['rows'][0]['elements'][0]
+
+    # Printing the result
+    return my_dist
 
 def update_location(latitude, longitude, user):
     try:

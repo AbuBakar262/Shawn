@@ -35,7 +35,7 @@ class PermissionsUtil:
 def firebase_notification(device_id, title, body):
     SCOPES = [FIREBASE_SCOPES]
     credentials = service_account.Credentials.from_service_account_file(
-        'firebase_account_file/sean-f9f51-firebase-adminsdk-gwhhn-45381e805f.json', scopes=SCOPES)
+        'firebase_account_file/sean-f9f51-firebase-adminsdk-gwhhn-bf143fd1f3.json', scopes=SCOPES)
     request = google.auth.transport.requests.Request()
     credentials.refresh(request)
     access_token = credentials.token

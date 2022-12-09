@@ -43,9 +43,13 @@ def firebase_notification(device_id, title, body):
     payload = json.dumps({
         "message": {
             "token": device_id,
-            "data": {
+            "notification": {
                 "title": title,
                 "body": body
+            },
+            "data": {
+                "field1": "value1",
+                "field2": "value2"
             }
         }
     })

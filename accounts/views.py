@@ -149,7 +149,7 @@ class UserViewSet(viewsets.ModelViewSet):
             email = request.data.get('email')
             if phone:
                 user = User.objects.filter(phone=phone).first()
-                otp = send_otp_phone(user.phone)
+                otp = send_otp_phone(user.formatted_phone + user.phone)
                 if otp != 'sent':
                     return Response(data={
                         "statusCode": 400, "error": True,

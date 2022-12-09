@@ -19,8 +19,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified']
+                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone',
+                  'dob', 'bio', 'email_verified', 'phone_verified']
 
     def get_profile_thumbnail(self, obj):
         return get_thumb(obj)
@@ -52,7 +52,7 @@ class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
+                  'profile_pic', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio', 'email_verified',
                   'phone_verified', 'password',
                   'device_id']
 
@@ -102,6 +102,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
     profile_thumbnail = serializers.SerializerMethodField()
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True, allow_null=True, allow_blank=True)
     phone = serializers.CharField(required=True, allow_null=True, allow_blank=True)
+    formatted_phone = serializers.CharField(required=True, allow_null=True, allow_blank=True)
     country_code = serializers.CharField(required=True, allow_null=True, allow_blank=True)
     dob = serializers.DateField(required=False)
     bio = serializers.CharField(required=True, allow_null=True, allow_blank=True)
@@ -109,8 +110,8 @@ class SocialLoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified', 'device_id']
+                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone',
+                  'dob', 'bio', 'email_verified', 'phone_verified', 'device_id']
 
     def create(self, validated_data):
         username = validated_data['username']
@@ -120,6 +121,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
         account_type = validated_data['account_type']
         gender = validated_data['gender']
         phone = validated_data['phone']
+        formatted_phone = validated_data['formatted_phone']
         country_code = validated_data['country_code']
         bio = validated_data['bio']
         with transaction.atomic():
@@ -159,7 +161,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                 user = User.objects.create(username=username.lower(), social_id=social_id, email=email.lower(),
                                            account_type=account_type, profile_pic=validated_data['profile_pic'],
                                            gender=gender, phone=phone, country_code=country_code,
-                                           dob=dob, bio=bio, create_profile=True)
+                                           formatted_phone=formatted_phone, dob=dob, bio=bio, create_profile=True)
                 user.save()
             if not DeviceRegistration.objects.filter(user=user).exists():
                 DeviceRegistration.objects.create(user=user, registration_id=device_id)
@@ -176,6 +178,7 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=True)
     phone = serializers.CharField(required=True)
     country_code = serializers.CharField(required=True)
+    formatted_phone = serializers.CharField(required=True)
     dob = serializers.DateField(required=True)
     bio = serializers.CharField(required=True)
     social_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -183,8 +186,8 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified']
+                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone',
+                  'dob', 'bio', 'email_verified', 'phone_verified']
 
     def validate(self, attrs):
         dob = attrs.get("dob")
@@ -208,7 +211,7 @@ class SocialUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
+                  'profile_pic', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio', 'email_verified',
                   'phone_verified']
 
 
@@ -216,7 +219,7 @@ class SocialProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
+                  'profile_pic', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio', 'email_verified',
                   'phone_verified']
 
 
@@ -236,8 +239,8 @@ class SigninSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified', 'password', 'device_id']
+                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio',
+                  'email_verified', 'phone_verified', 'password', 'device_id']
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -341,8 +344,8 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False)
-    phone = serializers.CharField(required=False)
-    country_code = serializers.CharField(required=True)
+    # phone = serializers.CharField(required=False)
+    # country_code = serializers.CharField(required=True)
     dob = serializers.DateField(required=False)
     bio = serializers.CharField(required=False)
     profile_pic = serializers.FileField(required=False)
@@ -352,11 +355,11 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
-                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified']
+                  'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone',
+                  'dob', 'bio', 'email_verified', 'phone_verified']
 
     def validate(self, attrs):
-        phone = attrs.get('phone')
+        # phone = attrs.get('phone')
         dob = attrs.get('dob')
         profile_pic = attrs.get('profile_pic')
         if dob:
@@ -365,8 +368,8 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'dob': _("You must be 16 or older to use Sean App")})
         user = self.context['request'].user
-        if User.objects.filter(phone=phone, create_profile=True).exclude(id=user.id).exists():
-            raise serializers.ValidationError({'phone': _('phone already exists')})
+        # if User.objects.filter(phone=phone, create_profile=True).exclude(id=user.id).exists():
+        #     raise serializers.ValidationError({'phone': _('phone already exists')})
         profile = User.objects.filter(id=user.id).first().profile_pic
         user_profile_img = profile.name.split("profile_photos/")[1]
         if profile_pic:
@@ -405,8 +408,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'create_profile', 'social_id', 'is_account', 'profile_pic',
-                  'profile_thumbnail', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified', 'account_type']
+                  'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio',
+                  'email_verified', 'phone_verified', 'account_type']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -435,8 +438,8 @@ class UsersProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'create_profile', 'social_id', 'is_account', 'profile_pic',
-                  'profile_thumbnail', 'gender', 'country_code', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified', 'account_type']
+                  'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio',
+                  'email_verified', 'phone_verified', 'account_type']
 
     # def get_is_friend(self, obj):
     #     if Friend.objects.filter(Q(user=obj) | Q(friend=obj)).exists():

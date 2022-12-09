@@ -32,4 +32,4 @@ class Notification(models.Model):
     updated_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.sender} - {self.receiver} - {self.message_title} - {self.type}'
+        return f'{self.sender} - {self.receiver}  - {self.type}'

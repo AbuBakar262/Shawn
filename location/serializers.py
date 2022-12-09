@@ -9,7 +9,7 @@ class UserLocationSerializer(serializers.ModelSerializer):
     longitude = serializers.FloatField(required=True)
     address = serializers.CharField(required=True)
     title = serializers.CharField(required=True)
-    image = serializers.FileField(required=True)
+    image = serializers.CharField(required=False)
 
     class Meta:
         model = FavouriteLocation

@@ -8,6 +8,8 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from location.serializers import SearchLocationSerializer
 from notification.models import *
 
 from location.utils import get_mongodb_database
@@ -55,11 +57,23 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                      "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
     def list(self, request, *args, **kwargs):
+        serializer = SearchLocationSerializer(data=request.query_params)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        latitude = request.query_params.get("latitude")
+        longitude = request.query_params.get("longitude")
         try:
             user = request.user
             dbname = get_mongodb_database()
             collection_name = dbname["SeanCollection"]
-            user_found = list(collection_name.find({"friends_list": user.id}, {'_id': 0}))
+            query = {"friends_list": user.id, "location": {"$near": {"$geometry": {"type": "Point", "coordinates":
+                [float(latitude), float(longitude)], }, "$maxDistance": 15000, }, }, }, {'_id': 0}
+            user_found = list(collection_name.find(query))
+            # user_found = list(collection_name.find({"friends_list": user.id}, {'_id': 0}))
             return Response(data={
                 "statusCode": 200, "error": False,
                 "message": "All Friends List",
@@ -99,10 +113,22 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
 
     def all_user_list(self, request, *args, **kwargs):
         try:
-            user = request.user
+            serializer = SearchLocationSerializer(data=request.query_params)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            latitude = request.query_params.get("latitude")
+            longitude = request.query_params.get("longitude")
+            # user = request.user
             dbname = get_mongodb_database()
             collection_name = dbname["SeanCollection"]
-            user_found = list(collection_name.find({},{'_id':0}))
+            query = {"location": {"$near": {"$geometry": {"type": "Point", "coordinates":
+                [float(latitude), float(longitude)], }, "$maxDistance": 15000, }, }, }
+            user_found = list(collection_name.find(query))
+            # user_found = list(collection_name.find({},{'_id':0}))
             return Response({
                 "statusCode": 200, "error": False, "message": "All Users List",
                 "data": user_found,

@@ -137,25 +137,28 @@ def update_location(user_id, latitude, longitude, profile_thumbnail, friends_lis
         collection_name = dbname["SeanCollection"]
         list_index_check = list(collection_name.list_indexes())
         if len(list_index_check) == 0:
-            collection_name.create_index([("location", GEO2D)])
+            # collection_name.create_index([("location", GEO2D)])
+            collection_name.create_index([("location", "2dsphere")])
         index_check = collection_name.index_information()
         if index_check:
-            get_index = index_check.get('location_2d')
+            get_index = index_check.get('location_2dsphere')
             if get_index is None:
-                collection_name.create_index([("location", GEO2D)])
+                # collection_name.create_index([("location", GEO2D)])
+                collection_name.create_index([("location", "2dsphere")])
         found = collection_name.find({"user_id": user_id})
         driver_mongo = list(found)
         if len(driver_mongo) == 0:
             collection_name.insert_one(
                 {"user_id": user_id, "profile_thumbnail": profile_thumbnail, "friends_list":friends_list,
-                 "location": [float(latitude), float(longitude)]})
+                 "location": {"type": "Point", "coordinates": [float(latitude), float(longitude)],},
+                 "upsert": True,
+                 })
         else:
             myquery = driver_mongo[0]
             new_values = {"$set": {"profile_thumbnail": profile_thumbnail, "friends_list":friends_list,
-                 "location": [float(latitude), float(longitude)]}}
+                 "location": {"type": "Point", "coordinates": [float(latitude), float(longitude)],},
+                                   "upsert": True,}}
             collection_name.update_one(myquery, new_values)
-
-
 
 
 class LiveTrackingConsumer(AsyncWebsocketConsumer):

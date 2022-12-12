@@ -40,24 +40,24 @@ class UserLocationListSerializer(serializers.ModelSerializer):
             return total
 
 
-class CheckInLocationSerializer(serializers.ModelSerializer):
-    latitude = serializers.FloatField(required=True)
-    longitude = serializers.FloatField(required=True)
-    address = serializers.CharField(required=False)
-    title = serializers.CharField(required=False)
-
-    class Meta:
-        model = CheckInLocation
-        fields = ['id', 'user', 'latitude', 'longitude', 'address', 'title', 'created_at', 'updated_at']
-
-    def validate(self, attrs):
-        user = self.context['request'].user
-        latitude = attrs.get('latitude')
-        longitude = attrs.get('longitude')
-        address = attrs.get('address')
-        if CheckInLocation.objects.filter(user=user, latitude=latitude, longitude=longitude, address=address).exists():
-            raise serializers.ValidationError({'error': _('You already check in this location')})
-        return attrs
+# class CheckInLocationSerializer(serializers.ModelSerializer):
+#     latitude = serializers.FloatField(required=True)
+#     longitude = serializers.FloatField(required=True)
+#     address = serializers.CharField(required=False)
+#     title = serializers.CharField(required=False)
+#
+#     class Meta:
+#         model = CheckInLocation
+#         fields = ['id', 'user', 'latitude', 'longitude', 'address', 'title', 'created_at', 'updated_at']
+#
+#     def validate(self, attrs):
+#         user = self.context['request'].user
+#         latitude = attrs.get('latitude')
+#         longitude = attrs.get('longitude')
+#         address = attrs.get('address')
+#         if CheckInLocation.objects.filter(user=user, latitude=latitude, longitude=longitude, address=address).exists():
+#             raise serializers.ValidationError({'error': _('You already check in this location')})
+#         return attrs
 
 
 class CheckInListLocationSerializer(serializers.ModelSerializer):
@@ -69,3 +69,10 @@ class CheckInListLocationSerializer(serializers.ModelSerializer):
 class SearchLocationSerializer(serializers.Serializer):
     latitude = serializers.CharField(required=True)
     longitude = serializers.CharField(required=True)
+
+
+class CheckInLocationSerializer(serializers.Serializer):
+    latitude = serializers.FloatField(required=True)
+    longitude = serializers.FloatField(required=True)
+    address = serializers.CharField(required=False)
+    title = serializers.CharField(required=False)

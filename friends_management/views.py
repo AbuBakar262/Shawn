@@ -71,12 +71,12 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             dbname = get_mongodb_database()
             collection_name = dbname["SeanCollection"]
             query = {"friends_list": user.id, "location": {"$near": {"$geometry": {"type": "Point", "coordinates":
-                [float(latitude), float(longitude)], }, "$maxDistance": 15000, }, }, }, {'_id': 0}
+                [float(longitude), float(latitude)], }, "$maxDistance": 15000, }, }, }, {'_id': 0}
             user_found = collection_name.find(query[0], query[1])
             result = []
             origin = (latitude, longitude)
             for i in user_found:
-                destination = (i.get("location").get('coordinates')[0], i.get('location').get('coordinates')[1])
+                destination = (i.get("location").get('coordinates')[1], i.get('location').get('coordinates')[0])
                 distance_time = distance_google_map(origin, destination)
                 data = {
                     'user_id': i.get("user_id"),
@@ -139,12 +139,12 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             dbname = get_mongodb_database()
             collection_name = dbname["SeanCollection"]
             query = {"location": {"$near": {"$geometry": {"type": "Point", "coordinates":
-                [float(latitude), float(longitude)], }, "$maxDistance": 15000, }, }, }, {'_id':0}
+                [float(longitude), float(latitude)], }, "$maxDistance": 15000, }, }, }, {'_id':0}
             user_found = collection_name.find(query[0],query[1])
             result = []
             origin = (latitude, longitude)
             for i in user_found:
-                destination = (i.get("location").get('coordinates')[0], i.get('location').get('coordinates')[1])
+                destination = (i.get("location").get('coordinates')[1], i.get('location').get('coordinates')[0])
                 distance_time = distance_google_map(origin, destination)
                 data = {
                 'user_id': i.get("user_id"),

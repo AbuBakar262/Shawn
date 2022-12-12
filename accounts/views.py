@@ -296,8 +296,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 user_location = collection_name.find({"user_id": int(user_id)}, {'_id': 0})
                 for i in user_location:
                     if i.get("location"):
-                        data['latitude'] = i.get("location").get("coordinates")[0]
-                        data['longitude'] = i.get("location").get("coordinates")[1]
+                        data['latitude'] = i.get("location").get("coordinates")[1]
+                        data['longitude'] = i.get("location").get("coordinates")[0]
                     else:
                         data['latitude'] = 0.00
                         data['longitude'] = 0.00

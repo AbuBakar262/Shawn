@@ -153,13 +153,13 @@ def update_location(user_id, latitude, longitude, profile_thumbnail, friends_lis
         if len(driver_mongo) == 0:
             collection_name.insert_one(
                 {"user_id": user_id, "profile_thumbnail": profile_thumbnail, "friends_list":friends_list,
-                 "location": {"type": "Point", "coordinates": [float(latitude), float(longitude)],},
+                 "location": {"type": "Point", "coordinates": [float(longitude), float(latitude)],},
                  "upsert": True,
                  })
         else:
             myquery = driver_mongo[0]
             new_values = {"$set": {"profile_thumbnail": profile_thumbnail, "friends_list":friends_list,
-                 "location": {"type": "Point", "coordinates": [float(latitude), float(longitude)],},
+                 "location": {"type": "Point", "coordinates": [float(longitude), float(latitude)],},
                                    "upsert": True,}}
             collection_name.update_one(myquery, new_values)
 

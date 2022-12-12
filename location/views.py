@@ -7,6 +7,8 @@ from rest_framework import viewsets, generics, filters
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from location.utils import get_mongodb_database, distance_google_map
 from sean_backend.settings import GOOGLE_MAPS_URL, GOOGLE_MAPS_RADIUS, GOOGLE_MAPS_TYPES, GOOGLE_MAPS_KEYWORDS, \
     GOOGLE_MAPS_API_KEY
 from sean_backend.utils import PermissionsUtil
@@ -117,16 +119,38 @@ class CheckInLocationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer = CheckInLocationSerializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                      "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save(user=request.user)
+        latitude = request.data.get("latitude")
+        longitude = request.data.get("longitude")
+        address = request.data.get("address")
+        title = request.data.get("title")
+        user_id = request.user.id
+        dbname = get_mongodb_database()
+        collection_name = dbname["CheckInCollection"]
+        list_index_check = list(collection_name.list_indexes())
+        if len(list_index_check) == 0:
+            collection_name.create_index([("location", "2dsphere")])
+        index_check = collection_name.index_information()
+        if index_check:
+            get_index = index_check.get('location_2dsphere')
+            if get_index is None:
+                collection_name.create_index([("location", "2dsphere")])
+        collection_name.find({"user_id": user_id})
+        collection_name.insert_one(
+            {"user_id": user_id, "title": title, "address": address,
+             "location": {"type": "Point", "coordinates": [float(longitude), float(latitude)], },
+             "upsert": True,
+             })
+        data = {"user_id": user_id, "title": title, "address": address,
+                "longitude": longitude, "latitude": latitude,}
         response = {"statusCode": 201, "error": False, "message": "CheckIn Location successfully!",
-                    "data": serializer.data}
+                    "data": data}
         return Response(response, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
@@ -137,3 +161,32 @@ class CheckInLocationViewSet(viewsets.ModelViewSet):
                     "data": serializer.data}
         return Response(response, status=status.HTTP_201_CREATED)
 
+
+    def location_checkin(self, request, *args, **kwargs):
+        serializer = CheckInLocationSerializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        latitude = request.data.get("latitude")
+        longitude = request.data.get("longitude")
+        user_id = request.user.id
+        dbname = get_mongodb_database()
+        collection_name = dbname["CheckInCollection"]
+        query = {"user_id": user_id, "location": {"$near": {"$geometry": {"type": "Point", "coordinates":
+            [float(longitude), float(latitude)], }, "$maxDistance": 100, }, }, }, {'_id': 0}
+        user_found = collection_name.find(query[0], query[1])
+        result = []
+        for i in user_found:
+            data = {
+                'user_id': i.get("user_id"),
+                'title': i.get("title"),
+                'address': i.get("address"),
+                'longitude': i.get("location").get("coordinates")[0],
+                'latitude': i.get("location").get("coordinates")[1]}
+            result.append(data)
+        response = {"statusCode": 200, "error": False, "message": "CheckIn Location Detail!",
+                    "data": result}
+        return Response(response, status=status.HTTP_201_CREATED)

@@ -82,7 +82,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                     'user_id': i.get("user_id"),
                     'profile_thumbnail': i.get("profile_thumbnail"),
                     'friends_list': i.get("friends_list"),
-                    'location': i.get("location").get("coordinates"),
+                    'location': [i.get("location").get("coordinates")[1], i.get("location").get("coordinates")[0]],
                     "distance": distance_time.get('distance').get('text'),
                     "time": distance_time.get('duration').get('text')}
                 result.append(data)
@@ -150,7 +150,7 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
                 'user_id': i.get("user_id"),
                 'profile_thumbnail' : i.get("profile_thumbnail"),
                 'friends_list' : i.get("friends_list"),
-                'location' : i.get("location").get("coordinates"),
+                'location' : [i.get("location").get("coordinates")[1], i.get("location").get("coordinates")[0]],
                 "distance": distance_time.get('distance').get('text'),
                 "time": distance_time.get('duration').get('text')}
                 result.append(data)

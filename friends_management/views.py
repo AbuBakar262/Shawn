@@ -308,14 +308,25 @@ class FriendManagementViewSet(viewsets.ModelViewSet):
             friend = request.data.get('friend')
             if Friend.objects.filter(Q(user=user, friend=friend) | Q(user=friend, friend=user)).exists():
                 Friend.objects.filter(Q(user=user, friend=friend) | Q(user=friend, friend=user)).delete()
-                user_friend = Friend.objects.filter(user=user).values_list("friend_id", flat=True)
-                friend_user = Friend.objects.filter(friend=user).values_list("user_id", flat=True)
-                friends_list = list(user_friend) + (list(friend_user))
+                my_friends_1 = Friend.objects.filter(user=user).values_list("friend_id", flat=True)
+                my_friends_2 = Friend.objects.filter(friend=user).values_list("user_id", flat=True)
+                my_friends_list = list(my_friends_1) + (list(my_friends_2))
                 dbname = get_mongodb_database()
                 collection_name = dbname["SeanCollection"]
                 user_found = collection_name.find({"user_id": user.id}, {'_id': 0})
                 myquery = user_found[0]
-                new_values = {"$set": {"friends_list": friends_list}}
+                new_values = {"$set": {"friends_list": my_friends_list}}
+                collection_name.update_one(myquery, new_values)
+                #friend list update
+                user_friend = User.objects.get(id=friend)
+                user_friend_1 = Friend.objects.filter(user=user_friend).values_list("friend_id", flat=True)
+                user_friend_2 = Friend.objects.filter(friend=user_friend).values_list("user_id", flat=True)
+                user_friends_list = list(user_friend_1) + (list(user_friend_2))
+                dbname = get_mongodb_database()
+                collection_name = dbname["SeanCollection"]
+                user_found = collection_name.find({"user_id": int(friend)}, {'_id': 0})
+                myquery = user_found[0]
+                new_values = {"$set": {"friends_list": user_friends_list}}
                 collection_name.update_one(myquery, new_values)
                 return Response(data={
                     "statusCode": 200, "error": False,

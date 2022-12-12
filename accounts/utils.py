@@ -112,10 +112,16 @@ def social_account_exist(username, social_id, email):
         else:
             return False
     else:
-        if User.objects.filter(social_id=social_id, email=email.lower()).exists():
-            return True
+        if email:
+            if User.objects.filter(social_id=social_id, email=email.lower(), account_type='Apple').exists():
+                return True
+            else:
+                return False
         else:
-            return False
+            if User.objects.filter(social_id=social_id, account_type='Apple').exists():
+                return True
+            else:
+                return False
 
 
 def get_thumb(obj):

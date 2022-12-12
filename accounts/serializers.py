@@ -346,11 +346,11 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False)
     # phone = serializers.CharField(required=False)
     # country_code = serializers.CharField(required=True)
-    dob = serializers.DateField(required=False)
-    bio = serializers.CharField(required=False)
+    dob = serializers.DateField(required=True)
+    bio = serializers.CharField(required=True)
     profile_pic = serializers.FileField(required=False)
     profile_thumbnail = serializers.SerializerMethodField()
-    social_id = serializers.CharField(required=False)
+    social_id = serializers.CharField(required=True)
 
     class Meta:
         model = User

@@ -143,10 +143,12 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                 if User.objects.filter(phone=phone).exists():
                     message = ['Phone already exists']
                     raise serializers.ValidationError({'phone': message})
-                if not instagram_profile.startswith(
-                        ('https://www.instagram.com', 'www.instagram.com', 'instagram.com')):
-                    raise serializers.ValidationError(
-                        {'instagram_profile': _("please enter a valid instagram profile url!")})
+                if instagram_profile:
+                    if not instagram_profile.startswith(
+                            ('https://www.instagram.com', 'www.instagram.com', 'instagram.com')):
+                        message = ['please enter a valid instagram profile url!']
+                        raise serializers.ValidationError(
+                            {'instagram_profile': message})
                 dob = validated_data['dob']
                 if dob:
                     age = relativedelta(date.today(), dob).years
@@ -209,9 +211,10 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
         if User.objects.filter(phone=attrs.get("phone")).exists():
             raise serializers.ValidationError(
                 {'phone': _("Phone number already exists")})
-        if not instagram_profile.startswith(('https://www.instagram.com', 'www.instagram.com', 'instagram.com')):
-            raise serializers.ValidationError(
-                {'instagram_profile': _("please enter a valid instagram profile url!")})
+        if instagram_profile:
+            if not instagram_profile.startswith(('https://www.instagram.com', 'www.instagram.com', 'instagram.com')):
+                raise serializers.ValidationError(
+                    {'instagram_profile': _("please enter a valid instagram profile url!")})
         return attrs
 
     def get_profile_thumbnail(self, obj):
@@ -397,9 +400,10 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         # profile_thumb_data = profile_thumb.name.split("profile_thumbnails/")[1]
         # if profile_data == False and profile_thumb_data == False:
         #     delete_image(profile=profile, profile_thumb=profile_thumb)
-        if not instagram_profile.startswith(('https://www.instagram.com', 'www.instagram.com', 'instagram.com')):
-            raise serializers.ValidationError(
-                {'instagram_profile': _("please enter a valid instagram profile url!")})
+        if instagram_profile:
+            if not instagram_profile.startswith(('https://www.instagram.com', 'www.instagram.com', 'instagram.com')):
+                raise serializers.ValidationError(
+                    {'instagram_profile': _("please enter a valid instagram profile url!")})
         return attrs
 
     def get_profile_thumbnail(self, obj):

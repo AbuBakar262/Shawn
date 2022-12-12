@@ -149,7 +149,7 @@ class CheckInLocationViewSet(viewsets.ModelViewSet):
              })
         data = {"user_id": user_id, "title": title, "address": address,
                 "longitude": longitude, "latitude": latitude,}
-        response = {"statusCode": 201, "error": False, "message": "CheckIn Location successfully!",
+        response = {"statusCode": 201, "error": False, "message": "Check In Location successfully!",
                     "data": data}
         return Response(response, status=status.HTTP_201_CREATED)
 
@@ -187,6 +187,6 @@ class CheckInLocationViewSet(viewsets.ModelViewSet):
                 'longitude': i.get("location").get("coordinates")[0],
                 'latitude': i.get("location").get("coordinates")[1]}
             result.append(data)
-        response = {"statusCode": 200, "error": False, "message": "CheckIn Location Detail!",
+        response = {"statusCode": 200, "error": False, "message": "Check In Location Detail!",
                     "data": result}
         return Response(response, status=status.HTTP_201_CREATED)

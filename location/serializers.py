@@ -74,5 +74,5 @@ class SearchLocationSerializer(serializers.Serializer):
 class CheckInLocationSerializer(serializers.Serializer):
     latitude = serializers.FloatField(required=True)
     longitude = serializers.FloatField(required=True)
-    address = serializers.CharField(required=False)
-    title = serializers.CharField(required=False)
+    address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    title = serializers.CharField(required=False, allow_blank=True, allow_null=True)

@@ -178,7 +178,7 @@ class CheckInLocationViewSet(viewsets.ModelViewSet):
         query = {"user_id": user_id, "location": {"$near": {"$geometry": {"type": "Point", "coordinates":
             [float(longitude), float(latitude)], }, "$maxDistance": 100, }, }, }, {'_id': 0}
         user_found = collection_name.find(query[0], query[1])
-        result = []
+        data = None
         for i in user_found:
             data = {
                 'user_id': i.get("user_id"),
@@ -186,7 +186,9 @@ class CheckInLocationViewSet(viewsets.ModelViewSet):
                 'address': i.get("address"),
                 'longitude': i.get("location").get("coordinates")[0],
                 'latitude': i.get("location").get("coordinates")[1]}
-            result.append(data)
+            response = {"statusCode": 200, "error": False, "message": "Check In Location Detail!",
+                        "data": data}
+            return Response(response, status=status.HTTP_201_CREATED)
         response = {"statusCode": 200, "error": False, "message": "Check In Location Detail!",
-                    "data": result}
+                    "data": data}
         return Response(response, status=status.HTTP_201_CREATED)

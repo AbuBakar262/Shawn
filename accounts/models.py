@@ -26,6 +26,7 @@ class User(AbstractUser):
     create_profile = models.BooleanField(default=False)
     is_account = models.CharField(max_length=10, choices=ACCOUNT_CHOICE, default='Public')
     social_id = models.CharField(max_length=250, null=True, blank=True)
+    instagram_profile = models.CharField(max_length=250, null=True, blank=True)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE, default='')
     profile_pic = models.FileField(upload_to='profile_photos', null=True, blank=True)
     # profile_thumbnail = models.FileField(upload_to='profile_thumbnails', null=True, blank=True)

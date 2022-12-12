@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
                   'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone',
-                  'dob', 'bio', 'email_verified', 'phone_verified']
+                  'dob', 'bio', 'email_verified', 'phone_verified', 'instagram_profile']
 
     def get_profile_thumbnail(self, obj):
         return get_thumb(obj)
@@ -53,8 +53,7 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
                   'profile_pic', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified', 'password',
-                  'device_id']
+                  'phone_verified', 'password','device_id', 'instagram_profile']
 
     @staticmethod
     def validate_password(data):
@@ -94,6 +93,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True)
     username = serializers.CharField(required=True, allow_null=True, allow_blank=True)
     social_id = serializers.CharField(required=True)
+    instagram_profile = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     email = serializers.EmailField(required=True, allow_null=True, allow_blank=True)
     device_id = serializers.CharField(required=True, write_only=True, allow_null=True, allow_blank=True)
     account_type = serializers.ChoiceField(choices=SOCIAL_ACCOUNT_TYPE, required=True, allow_null=True,
@@ -111,7 +111,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
                   'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone',
-                  'dob', 'bio', 'email_verified', 'phone_verified', 'device_id']
+                  'dob', 'bio', 'email_verified', 'phone_verified', 'device_id', 'instagram_profile']
 
     def create(self, validated_data):
         username = validated_data['username']
@@ -124,6 +124,7 @@ class SocialLoginSerializer(serializers.ModelSerializer):
         formatted_phone = validated_data['formatted_phone']
         country_code = validated_data['country_code']
         bio = validated_data['bio']
+        instagram_profile = validated_data['instagram_profile']
         with transaction.atomic():
             if User.objects.filter(social_id=social_id, username=username.lower()).exists() \
                     or User.objects.filter(social_id=social_id, email=email.lower()).exists():
@@ -142,6 +143,10 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                 if User.objects.filter(phone=phone).exists():
                     message = ['Phone already exists']
                     raise serializers.ValidationError({'phone': message})
+                if not instagram_profile.startswith(
+                        ('https://www.instagram.com', 'www.instagram.com', 'instagram.com')):
+                    raise serializers.ValidationError(
+                        {'instagram_profile': _("please enter a valid instagram profile url!")})
                 dob = validated_data['dob']
                 if dob:
                     age = relativedelta(date.today(), dob).years
@@ -161,7 +166,8 @@ class SocialLoginSerializer(serializers.ModelSerializer):
                 user = User.objects.create(username=username.lower(), social_id=social_id, email=email.lower(),
                                            account_type=account_type, profile_pic=validated_data['profile_pic'],
                                            gender=gender, phone=phone, country_code=country_code,
-                                           formatted_phone=formatted_phone, dob=dob, bio=bio, create_profile=True)
+                                           formatted_phone=formatted_phone, dob=dob, bio=bio, create_profile=True,
+                                           instagram_profile=instagram_profile)
                 user.save()
             if not DeviceRegistration.objects.filter(user=user).exists():
                 DeviceRegistration.objects.create(user=user, registration_id=device_id)
@@ -182,15 +188,17 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
     dob = serializers.DateField(required=True)
     bio = serializers.CharField(required=True)
     social_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    instagram_profile = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
                   'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone',
-                  'dob', 'bio', 'email_verified', 'phone_verified']
+                  'dob', 'bio', 'email_verified', 'phone_verified', 'instagram_profile']
 
     def validate(self, attrs):
         dob = attrs.get("dob")
+        instagram_profile = attrs.get("instagram_profile")
         if User.objects.filter(id=self.context['instance'].id, create_profile=True).exists():
             raise serializers.ValidationError({'error': _('profile already created')})
         if dob:
@@ -201,6 +209,9 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
         if User.objects.filter(phone=attrs.get("phone")).exists():
             raise serializers.ValidationError(
                 {'phone': _("Phone number already exists")})
+        if not instagram_profile.startswith(('https://www.instagram.com', 'www.instagram.com', 'instagram.com')):
+            raise serializers.ValidationError(
+                {'instagram_profile': _("please enter a valid instagram profile url!")})
         return attrs
 
     def get_profile_thumbnail(self, obj):
@@ -212,7 +223,7 @@ class SocialUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
                   'profile_pic', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified']
+                  'phone_verified', 'instagram_profile']
 
 
 class SocialProfileSerializer(serializers.ModelSerializer):
@@ -220,7 +231,7 @@ class SocialProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
                   'profile_pic', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio', 'email_verified',
-                  'phone_verified']
+                  'phone_verified', 'instagram_profile']
 
 
 class SigninSerializer(serializers.ModelSerializer):
@@ -240,7 +251,7 @@ class SigninSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
                   'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio',
-                  'email_verified', 'phone_verified', 'password', 'device_id']
+                  'email_verified', 'phone_verified', 'password', 'device_id', 'instagram_profile']
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -351,16 +362,18 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     profile_pic = serializers.FileField(required=False)
     profile_thumbnail = serializers.SerializerMethodField()
     social_id = serializers.CharField(required=True)
+    instagram_profile = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'social_id', 'account_type', 'create_profile', 'is_account',
                   'profile_pic', 'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone',
-                  'dob', 'bio', 'email_verified', 'phone_verified']
+                  'dob', 'bio', 'email_verified', 'phone_verified', 'instagram_profile']
 
     def validate(self, attrs):
         # phone = attrs.get('phone')
         dob = attrs.get('dob')
+        instagram_profile = attrs.get('instagram_profile')
         profile_pic = attrs.get('profile_pic')
         if dob:
             age = relativedelta(date.today(), dob).years
@@ -384,7 +397,9 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         # profile_thumb_data = profile_thumb.name.split("profile_thumbnails/")[1]
         # if profile_data == False and profile_thumb_data == False:
         #     delete_image(profile=profile, profile_thumb=profile_thumb)
-
+        if not instagram_profile.startswith(('https://www.instagram.com', 'www.instagram.com', 'instagram.com')):
+            raise serializers.ValidationError(
+                {'instagram_profile': _("please enter a valid instagram profile url!")})
         return attrs
 
     def get_profile_thumbnail(self, obj):
@@ -409,7 +424,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'create_profile', 'social_id', 'is_account', 'profile_pic',
                   'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio',
-                  'email_verified', 'phone_verified', 'account_type']
+                  'email_verified', 'phone_verified', 'account_type', 'instagram_profile']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -439,7 +454,7 @@ class UsersProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'create_profile', 'social_id', 'is_account', 'profile_pic',
                   'profile_thumbnail', 'gender', 'country_code', 'formatted_phone', 'phone', 'dob', 'bio',
-                  'email_verified', 'phone_verified', 'account_type']
+                  'email_verified', 'phone_verified', 'account_type', 'instagram_profile']
 
     # def get_is_friend(self, obj):
     #     if Friend.objects.filter(Q(user=obj) | Q(friend=obj)).exists():

@@ -102,7 +102,7 @@ class UserLocationViewSet(viewsets.ModelViewSet):
                     friend_user = Friend.objects.filter(friend=request.user).values_list("user_id", flat=True)
                     friends_list = list(user_friend) + (list(friend_user))
                     data['total_friends'] = CheckInLocation.objects.filter(user_id__in=friends_list,latitude=latitude, longitude=longitude).count()
-                    origin = (latitude, longitude)
+                    origin = (lat, long)
                     destination = (latitude, longitude)
                     distance_time = distance_google_map(origin, destination)
                     data['distance'] =distance_time.get('distance').get('text')

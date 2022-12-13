@@ -381,7 +381,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                          "errors": e.args[0]}
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
             user = request.user
-            user.is_account = serializer.validated_data.get('is_account')
+            user.is_account = request.data.get('is_account')
             user.save()
             user_serializer = UserSerializer(user)
             response = {"statusCode": 200, "error": False,

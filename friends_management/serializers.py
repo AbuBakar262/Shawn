@@ -17,7 +17,7 @@ class AddFriendSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if Friend.objects.filter(user=self.context['request'].user, friend=attrs.get("friend")).exists() \
                 or Friend.objects.filter(user=self.context['request'].user, friend=attrs.get("friend")).exists():
-            raise serializers.ValidationError({'error': _('you are already friends.')})
+            raise serializers.ValidationError({'error': _('You are already friends.')})
         return attrs
 
 

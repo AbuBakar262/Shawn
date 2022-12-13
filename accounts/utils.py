@@ -1,10 +1,14 @@
 import random
 import string
+
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 import boto3
 from twilio.rest import Client
 from rest_framework import serializers
 from accounts.models import User
+from friends_management.models import Friend
+from location.utils import get_mongodb_database
 from notification.models import DeviceRegistration
 from sean_backend.settings import ACCOUNT_SID_TWILIO, AUTH_TOKEN_TWILIO, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, \
     AWS_STORAGE_BUCKET_NAME, THUMBNAIL_LINK
@@ -133,3 +137,23 @@ def get_thumb(obj):
             return None
     else:
         return None
+
+
+def user_remove_mongo(user):
+    try:
+        Friend.objects.filter(Q(user=user) | Q(friend=user)).delete()
+        dbname = get_mongodb_database()
+        collection_name = dbname["SeanCollection"]
+        collection_name.delete_one({"user_id": user.id})
+        user_found_in_friend_list = collection_name.find({"friends_list": user.id}, {'_id': 0})
+        for i in user_found_in_friend_list:
+            if user.id in i.get("friends_list"):
+                i.get("friends_list").remove(user.id)
+                friends_list = i.get("friends_list")
+                values = {"$set": {"friends_list": friends_list}}
+                update_friend_list = collection_name.find({"user_id": i.get("user_id")})
+                myquery = update_friend_list[0]
+                collection_name.update_one(myquery, values)
+        return True
+    except Exception as e:
+        return e.args[0]

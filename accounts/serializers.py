@@ -411,9 +411,23 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
 
 
 class BlockUserSerializer(serializers.ModelSerializer):
+    block_user = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='id', required=True)
+
     class Meta:
         model = BlockUser
         fields = ['block_user']
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        blocked_user = attrs['block_user']
+
+        if user == blocked_user:
+            message = "You can not block yourself"
+            raise serializers.ValidationError(_(message))
+        if BlockUser.objects.filter(block_user=blocked_user):
+            message = "User already been blocked"
+            raise serializers.ValidationError(_(message))
+        return attrs
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

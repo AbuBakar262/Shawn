@@ -6,6 +6,8 @@ from pyfcm import FCMNotification
 from rest_framework.response import Response
 from google.oauth2 import service_account
 import google.auth.transport.requests
+
+from notification.models import SeanSetting
 from sean_backend.settings import FIREBASE_API_KEY, FIREBASE_URL, FIREBASE_SCOPES
 
 push_service = FCMNotification(api_key=FIREBASE_API_KEY)
@@ -66,3 +68,13 @@ def firebase_notification(device_id, title, body):
             return True
     else:
         return True
+
+
+def notification_status_check(user):
+    if SeanSetting.objects.filter(user=user).exists():
+        active = SeanSetting.objects.filter(user=user).first().notification_status
+        if active == True:
+            return True
+        else:
+            return False
+    return True

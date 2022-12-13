@@ -16,3 +16,6 @@ class DeviceRegistrationSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data['user'] = UserSerializer(instance.user).data
         return data
+
+class NotificationActiveSerializer(serializers.Serializer):
+    active = serializers.BooleanField(required=True)

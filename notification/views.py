@@ -69,3 +69,24 @@ class NotificationViewSet(viewsets.ModelViewSet):
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
                      "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+    def notification_active(self, request, *args, **kwargs):
+        serializer = NotificationActiveSerializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        active = request.data.get("active")
+        if SeanSetting.objects.filter(user=request.user).exists():
+            SeanSetting.objects.filter(user=request.user).update(notification_status=active)
+        else:
+            sean = SeanSetting.objects.create(user=request.user, notification_status=active)
+            sean.save()
+        data = {
+            "notification_active": active
+        }
+        response = {"statusCode": 20, "error": False, "message": "Notification Status Updated Successfully!",
+                    "data": data}
+        return Response(response, status=status.HTTP_201_CREATED)

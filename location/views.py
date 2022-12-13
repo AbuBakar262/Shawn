@@ -102,6 +102,11 @@ class UserLocationViewSet(viewsets.ModelViewSet):
                     friend_user = Friend.objects.filter(friend=request.user).values_list("user_id", flat=True)
                     friends_list = list(user_friend) + (list(friend_user))
                     data['total_friends'] = CheckInLocation.objects.filter(user_id__in=friends_list,latitude=latitude, longitude=longitude).count()
+                    origin = (latitude, longitude)
+                    destination = (i.get("location").get('coordinates')[1], i.get('location').get('coordinates')[0])
+                    distance_time = distance_google_map(origin, destination)
+                    data['distance'] = distance_time.get('distance').get('text'),
+                    data['time'] = distance_time.get('duration').get('text')
                     result.append(data)
             else:
                 result = []

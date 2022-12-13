@@ -33,3 +33,10 @@ class Notification(models.Model):
 
     def __str__(self):
         return f'{self.sender} - {self.receiver}  - {self.type}'
+
+
+class SeanSetting(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_in_sean_setting')
+    notification_status = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)

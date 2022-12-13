@@ -10,4 +10,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("api/search_location", UserLocationViewSet.as_view({"get": "search_location"}), name="search_location"),
     path("api/location_checkin", CheckInLocationViewSet.as_view({"post": "location_checkin"}), name="location_checkin"),
+    path("api/check_saved_location", UserLocationViewSet.as_view({"get": "check_saved_location"}), name="check_saved_location"),
 ]

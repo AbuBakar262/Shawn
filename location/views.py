@@ -118,6 +118,32 @@ class UserLocationViewSet(viewsets.ModelViewSet):
                      "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
+    def check_saved_location(self, request, *args, **kwargs):
+        serializer = SearchLocationSerializer(data=request.query_params)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": e.args[0]}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        lat = request.query_params.get("latitude")
+        long = request.query_params.get("longitude")
+        if FavouriteLocation.objects.filter(latitude=lat, longitude=long, user=request.user).exists():
+            location = FavouriteLocation.objects.filter(latitude=lat, longitude=long, user=request.user).first()
+            data = {
+                "id": location.id,
+                "latitude": location.latitude,
+                "longitude": location.longitude,
+                "title": location.title,
+                "address": location.address,
+                "image": location.image,
+            }
+        else:
+            data = None
+        response = {"statusCode": 200, "error": False, "message": "Saved Location Detail!",
+                    "data": data}
+        return Response(response, status=status.HTTP_201_CREATED)
+
 class CheckInLocationViewSet(viewsets.ModelViewSet):
     queryset = CheckInLocation.objects.all()
     serializer_class = CheckInLocationSerializer

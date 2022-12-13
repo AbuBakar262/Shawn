@@ -398,7 +398,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
         PermissionsUtil.destroy_permission(request, instance)
         user_remove_mongo(instance)
         profile = User.objects.filter(id=instance.id).first().profile_pic
-        delete_image(profile.name.split("/")[1])
+        if profile.name:
+            delete_image(profile.name.split("/")[1])
         self.perform_destroy(instance)
         response = {"statusCode": 200, "error": False, "message": "User profile deleted successfully!"}
         return Response(data=response, status=status.HTTP_200_OK)
@@ -595,24 +596,11 @@ class UsersDelete(APIView):
                     users_not_found.append(user_id)
                 if user_obj_check:
                     profile = User.objects.filter(id=user_id).first().profile_pic
-                    delete_image(profile.name.split("/")[1])
+                    if profile.name:
+                        delete_image(profile.name.split("/")[1])
                     users_exists.append(user_id)
                 user = User.objects.get(id=user_id)
                 user_remove_mongo(user)
-                # Friend.objects.filter(Q(user=user) | Q(friend=user)).delete()
-                # dbname = get_mongodb_database()
-                # collection_name = dbname["SeanCollection"]
-                # collection_name.delete_one({"user_id": user.id})
-                # user_found_in_friend_list = collection_name.find({"friends_list": user.id}, {'_id': 0})
-                # for i in user_found_in_friend_list:
-                #     if user.id in i.get("friends_list"):
-                #         i.get("friends_list").remove(user.id)
-                #         friends_list = i.get("friends_list")
-                #         values = {"$set": {"friends_list": friends_list}}
-                #         update_friend_list = collection_name.find({"user_id": i.get("user_id")})
-                #         myquery = update_friend_list[0]
-                #         collection_name.update_one(myquery, values)
-                # friend list update
                 User.objects.filter(id=user_id).delete()
             message_not_exists = {"user_ids": ["Object with ids={} does not exist.".format(users_not_found)]}
             message_exists = {"user_ids": ["Object with ids={} deleted successfully.".format(users_exists)]}

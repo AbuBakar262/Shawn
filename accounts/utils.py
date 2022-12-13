@@ -145,15 +145,15 @@ def user_remove_mongo(user):
         dbname = get_mongodb_database()
         collection_name = dbname["SeanCollection"]
         collection_name.delete_one({"user_id": user.id})
-        user_found_in_friend_list = collection_name.find({"friends_list": user.id}, {'_id': 0})
+        user_found_in_friend_list = collection_name.find({"friends_list": user.id})
         for i in user_found_in_friend_list:
             if user.id in i.get("friends_list"):
                 i.get("friends_list").remove(user.id)
                 friends_list = i.get("friends_list")
                 values = {"$set": {"friends_list": friends_list}}
-                update_friend_list = collection_name.find({"user_id": i.get("user_id")})
-                myquery = update_friend_list[0]
-                collection_name.update_one(myquery, values)
+                # update_friend_list = collection_name.find({"user_id": i.get("user_id")})
+                # myquery = update_friend_list[0]
+                collection_name.update_one(i, values)
         return True
     except Exception as e:
         return e.args[0]

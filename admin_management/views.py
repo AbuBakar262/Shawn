@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from admin_management.models import ReportUser, Subscription
 from admin_management.serializers import (
     AdminLoginSerializer, CreateReportUserSerializer, ListReportUserSerializer,
-    UpdateReportUserSerializer, AdminListUserSerializer
+    UpdateReportUserSerializer, AdminListUserSerializer, SearchUserSerializer
 )
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
@@ -163,6 +163,64 @@ class AdminListUserViewSet(viewsets.ViewSet):
             user = Subscription.objects.all()
             user_serializer = AdminListUserSerializer(user, many=True)
             response = {"statusCode": 200, "error": False, "message": "All User List", "data": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": str(e)}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Search Users Apis
+class SearchUserViewSet(viewsets.ViewSet):
+    permission_classes = [IsAdminUser]
+
+    # search for subscribed users
+    def search_subs_user(self, request, *args, **kwargs):
+        try:
+            search = self.request.query_params.get('search')
+            user = Subscription.objects.filter(status='subscribed', user__username__icontains=search)
+            user_serializer = AdminListUserSerializer(user, many=True)
+            response = {"statusCode": 200, "error": False, "message": "Searched Subscribed User",
+                        "data": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": str(e)}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+    def search_unsubs_user(self, request, *args, **kwargs):
+        try:
+            search = self.request.query_params.get('search')
+            user = Subscription.objects.filter(status='unsubscribed', user__username__icontains=search)
+            user_serializer = AdminListUserSerializer(user, many=True)
+            response = {"statusCode": 200, "error": False, "message": "Searched UnSubscribed User",
+                        "data": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": str(e)}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+    def search_trial_user(self, request, *args, **kwargs):
+        try:
+            search = self.request.query_params.get('search')
+            user = Subscription.objects.filter(status='trial', user__username__icontains=search)
+            user_serializer = AdminListUserSerializer(user, many=True)
+            response = {"statusCode": 200, "error": False, "message": "Searched Trial User",
+                        "data": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": str(e)}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+    def search_all_user(self, request, *args, **kwargs):
+        try:
+            search = self.request.query_params.get('search')
+            user = Subscription.objects.filter(user__username__icontains=search)
+            user_serializer = AdminListUserSerializer(user, many=True)
+            response = {"statusCode": 200, "error": False, "message": "Searched User",
+                        "data": user_serializer.data}
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",

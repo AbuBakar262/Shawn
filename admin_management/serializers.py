@@ -91,3 +91,15 @@ class AdminListUserSerializer(serializers.ModelSerializer):
         user = User.objects.filter(id=instance.user.id)
         data['user'] = user.values('email', 'username', 'profile_pic')
         return data
+
+
+class SearchUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ['user', 'search']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        user = User.objects.filter(id=instance.user.id)
+        data['user'] = user.values('email', 'username', 'profile_pic')
+        return data

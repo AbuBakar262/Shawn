@@ -171,11 +171,8 @@ def update_mongo_db(user, friend):
             user_data = user_found[0]
         except:
             user_data = []
-        if len(user_data) == 0:
-            collection_name.insert_one({"user_id": user.id, "friends_list": my_friends_list})
-        else:
-            values = {"$set": {"friends_list": my_friends_list}}
-            collection_name.update_one(user_data, values)
+        values = {"$set": {"friends_list": my_friends_list}}
+        collection_name.update_one(user_data, values)
 
         # unfriend user friend list update on mongodb
         user_friend = User.objects.get(id=friend)
@@ -187,11 +184,8 @@ def update_mongo_db(user, friend):
             user_data = user_found[0]
         except:
             user_data = []
-        if len(user_data) == 0:
-            collection_name.insert_one({"user_id": user.id, "friends_list": my_friends_list})
-        else:
-            new_values = {"$set": {"friends_list": user_friends_list}}
-            collection_name.update_one(user_data, new_values)
+        new_values = {"$set": {"friends_list": user_friends_list}}
+        collection_name.update_one(user_data, new_values)
         return True
     except Exception as e:
         return e.args[0]

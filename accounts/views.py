@@ -477,6 +477,7 @@ class SocialViewSet(viewsets.ModelViewSet):
                      "errors": e.args[0]}
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
+
 class BlockUserViewSet(viewsets.ModelViewSet):
     queryset = BlockUser.objects.all()
     serializer_class = BlockUserSerializer
@@ -485,28 +486,17 @@ class BlockUserViewSet(viewsets.ModelViewSet):
     def block_user(self, request, *args, **kwargs):
         try:
             user = request.user
-            blocked_user = User.objects.get(id=request.data.get('blocked_user'))
-            if not blocked_user:
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "User does not exist"
-                }, status=status.HTTP_400_BAD_REQUEST)
-            if user == blocked_user:
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "You can not block yourself"
-                }, status=status.HTTP_400_BAD_REQUEST)
-            if user in BlockUser.objects.filter(block_user=blocked_user):
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "User already blocked"
-                }, status=status.HTTP_400_BAD_REQUEST)
-            if Friend.objects.filter(user=request.user, friend=blocked_user).exists():
-                user_friend = Friend.objects.filter(user=request.user, friend=blocked_user).first()
-                user_friend.delete()
+            serializer = BlockUserSerializer(data=request.data, context={"request": request})
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            blocked_user = serializer.validated_data.get('block_user')
+            if Friend.objects.filter(user=user, friend=blocked_user).exists():
+                Friend.objects.filter(user=user, friend=blocked_user).delete()
+                update_mongo_db(user, blocked_user.id)
             block_user = BlockUser.objects.create(block_user=blocked_user, user=user)
             serializer = BlockUserSerializer(block_user)
             return Response(data={
@@ -538,26 +528,14 @@ class BlockUserViewSet(viewsets.ModelViewSet):
 
     def unblock_user(self, request, *args, **kwargs):
         try:
-            user = request.user
-            blocked_user = User.objects.get(id=request.data.get('blocked_user'))
-            if not blocked_user:
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "User does not exist"
-                }, status=status.HTTP_400_BAD_REQUEST)
-            if user == blocked_user:
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "You can not unblock yourself"
-                }, status=status.HTTP_400_BAD_REQUEST)
-            if not BlockUser.objects.filter(block_user=blocked_user).exists():
-                return Response(data={
-                    "status": "error",
-                    "status_code": status.HTTP_400_BAD_REQUEST,
-                    "message": "User is not blocked"
-                }, status=status.HTTP_400_BAD_REQUEST)
+            serializer = UnblockUserSerializer(data=request.data, context={"request": request})
+            try:
+                serializer.is_valid(raise_exception=True)
+            except Exception as e:
+                error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                         "errors": e.args[0]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            blocked_user = serializer.validated_data.get('block_user')
             block_user = BlockUser.objects.filter(block_user=blocked_user).first()
             block_user.delete()
             return Response(data={

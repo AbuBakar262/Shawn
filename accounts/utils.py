@@ -157,3 +157,41 @@ def user_remove_mongo(user):
         return True
     except Exception as e:
         return e.args[0]
+
+
+def update_mongo_db(user, friend):
+    try:
+        dbname = get_mongodb_database()
+        collection_name = dbname["SeanCollection"]
+        my_friends_1 = Friend.objects.filter(user=user).values_list("friend_id", flat=True)
+        my_friends_2 = Friend.objects.filter(friend=user).values_list("user_id", flat=True)
+        my_friends_list = list(my_friends_1) + (list(my_friends_2))
+        user_found = collection_name.find({"user_id": user.id}, {'_id': 0})
+        try:
+            user_data = user_found[0]
+        except:
+            user_data = []
+        if len(user_data) == 0:
+            collection_name.insert_one({"user_id": user.id, "friends_list": my_friends_list})
+        else:
+            values = {"$set": {"friends_list": my_friends_list}}
+            collection_name.update_one(user_data, values)
+
+        # unfriend user friend list update on mongodb
+        user_friend = User.objects.get(id=friend)
+        user_friend_1 = Friend.objects.filter(user=user_friend).values_list("friend_id", flat=True)
+        user_friend_2 = Friend.objects.filter(friend=user_friend).values_list("user_id", flat=True)
+        user_friends_list = list(user_friend_1) + (list(user_friend_2))
+        user_found = collection_name.find({"user_id": int(friend)}, {'_id': 0})
+        try:
+            user_data = user_found[0]
+        except:
+            user_data = []
+        if len(user_data) == 0:
+            collection_name.insert_one({"user_id": user.id, "friends_list": my_friends_list})
+        else:
+            new_values = {"$set": {"friends_list": user_friends_list}}
+            collection_name.update_one(user_data, new_values)
+        return True
+    except Exception as e:
+        return e.args[0]

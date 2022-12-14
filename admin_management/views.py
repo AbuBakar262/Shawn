@@ -3,10 +3,11 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
-from admin_management.models import ReportUser
-from admin_management.serializers import (AdminLoginSerializer,
-                                          CreateReportUserSerializer, ListReportUserSerializer,
-                                          UpdateReportUserSerializer)
+from admin_management.models import ReportUser, Subscription
+from admin_management.serializers import (
+    AdminLoginSerializer, CreateReportUserSerializer, ListReportUserSerializer,
+    UpdateReportUserSerializer, AdminListUserSerializer
+)
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
 
@@ -104,6 +105,64 @@ class ListReportUserViewSet(viewsets.ViewSet):
             report = ReportUser.objects.get(id=report_id)
             serializer = ListReportUserSerializer(report)
             response = {"statusCode": 200, "error": False, "message": "User List", "data": serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": str(e)}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminListUserViewSet(viewsets.ViewSet):
+    permission_classes = [IsAdminUser]
+
+    """
+        This class has 4 Apis and only admin can view these lists:
+        -> Subscribed Users List
+        -> Un-Subscribed Users List
+        -> Trial Base Users List
+        -> All Users List
+    """
+
+    def subscribed_user_list(self, request, *args, **kwargs):
+        try:
+            user = Subscription.objects.filter(status='subscribed')
+            user_serializer = AdminListUserSerializer(user, many=True)
+            response = {"statusCode": 200, "error": False, "message": "Subscribed User List",
+                        "data": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": str(e)}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+    def unsubscribed_user_list(self, request, *args, **kwargs):
+        try:
+            user = Subscription.objects.filter(status='unsubscribed')
+            user_serializer = AdminListUserSerializer(user, many=True)
+            response = {"statusCode": 200, "error": False, "message": "UnSubscribed User List",
+                        "data": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": str(e)}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+    def trial_user_list(self, request, *args, **kwargs):
+        try:
+            user = Subscription.objects.filter(status='trial')
+            user_serializer = AdminListUserSerializer(user, many=True)
+            response = {"statusCode": 200, "error": False, "message": "Trial User List", "data": user_serializer.data}
+            return Response(data=response, status=status.HTTP_200_OK)
+        except Exception as e:
+            error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",
+                     "errors": str(e)}
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+    def list_all_users(self, request, *args, **kwargs):
+        try:
+            user = Subscription.objects.all()
+            user_serializer = AdminListUserSerializer(user, many=True)
+            response = {"statusCode": 200, "error": False, "message": "All User List", "data": user_serializer.data}
             return Response(data=response, status=status.HTTP_200_OK)
         except Exception as e:
             error = {"statusCode": 400, "error": True, "data": "", "message": "Bad Request, Please check request",

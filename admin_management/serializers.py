@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from accounts.models import *
-from admin_management.models import ReportUser
+from admin_management.models import ReportUser, Subscription
 
 
 class AdminLoginSerializer(serializers.ModelSerializer):
@@ -79,3 +79,15 @@ class UpdateReportUserSerializer(serializers.ModelSerializer):
         if not reason:
             raise serializers.ValidationError({'error': _('Reason cannot be empty')})
         return attrs
+
+
+class AdminListUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ['user', 'is_blocked', 'status']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        user = User.objects.filter(id=instance.user.id)
+        data['user'] = user.values('email', 'username', 'profile_pic')
+        return data
